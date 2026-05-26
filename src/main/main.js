@@ -119,12 +119,12 @@ function buildMenu() {
     {
       label: "Tools",
       submenu: [
-        { label: "Pan", accelerator: "H", click: () => sendMenuCommand("tool", { tool: "pan" }) },
         { label: "Rectangle", accelerator: "R", click: () => sendMenuCommand("tool", { tool: "rectangle" }) },
         { label: "Ellipse", accelerator: "O", click: () => sendMenuCommand("tool", { tool: "ellipse" }) },
         { label: "Lasso", accelerator: "L", click: () => sendMenuCommand("tool", { tool: "lasso" }) },
         { label: "Brush", accelerator: "B", click: () => sendMenuCommand("tool", { tool: "brush" }) },
         { label: "Eraser", accelerator: "E", click: () => sendMenuCommand("tool", { tool: "eraser" }) },
+        { label: "Pan", accelerator: "H", click: () => sendMenuCommand("tool", { tool: "pan" }) },
       ],
     },
     {

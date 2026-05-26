@@ -48,6 +48,13 @@ test("renderer scales wheel zoom by input delta", async () => {
   assert.match(source, /getWheelZoomFactor\(event\.deltaY,\s*event\.deltaMode\)/);
 });
 
+test("renderer starts with rectangle as the active tool", async () => {
+  const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
+
+  assert.match(source, /tool:\s*"rectangle"/);
+  assert.match(source, /setTool\("rectangle"\)/);
+});
+
 test("renderer supports the pan hand tool", async () => {
   const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
   const resizeHitIndex = source.indexOf("const resizeHit = getResizeControlHit(event);");

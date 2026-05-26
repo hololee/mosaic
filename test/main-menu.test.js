@@ -11,3 +11,14 @@ test("application menu exposes the pan hand tool shortcut without a separate mov
   assert.doesNotMatch(source, /label:\s*"Move"/);
   assert.doesNotMatch(source, /accelerator:\s*"V"/);
 });
+
+test("application menu lists rectangle as the first drawing tool", async () => {
+  const source = await fs.readFile(new URL("../src/main/main.js", import.meta.url), "utf8");
+
+  const rectangleIndex = source.indexOf('label: "Rectangle"');
+  const panIndex = source.indexOf('label: "Pan"');
+
+  assert.ok(rectangleIndex > -1, "rectangle should be in the tools menu");
+  assert.ok(panIndex > -1, "pan should be in the tools menu");
+  assert.ok(rectangleIndex < panIndex, "rectangle should appear before pan");
+});
