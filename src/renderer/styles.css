@@ -67,6 +67,15 @@ body {
   flex: 1 1 24px;
 }
 
+.toolbar-secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
 button,
 input {
   font: inherit;
@@ -116,6 +125,18 @@ input {
 .slider-label output {
   color: var(--text);
   text-align: right;
+}
+
+@media (max-width: 1040px) {
+  .toolbar-secondary {
+    flex-basis: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .spacer {
+    display: none;
+  }
 }
 
 .workspace {
