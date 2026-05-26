@@ -7,6 +7,7 @@ import { getAppIconPath, getInitialWindowBounds } from "./window-options.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const APP_NAME = "Mosaic";
+const RENDERER_SESSION_PARTITION = "mosaic-temporary";
 
 let mainWindow;
 let currentProjectPath = null;
@@ -25,6 +26,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
+      partition: RENDERER_SESSION_PARTITION,
     },
   });
 
