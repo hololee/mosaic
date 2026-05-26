@@ -14,6 +14,10 @@ let currentProjectPath = null;
 
 const imageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
+if (process.platform === "darwin") {
+  app.commandLine.appendSwitch("use-mock-keychain");
+}
+
 app.setName(APP_NAME);
 
 function createWindow() {
