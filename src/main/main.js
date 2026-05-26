@@ -6,17 +6,20 @@ import { getAppIconPath, getInitialWindowBounds } from "./window-options.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const APP_NAME = "Mosaic";
 
 let mainWindow;
 let currentProjectPath = null;
 
 const imageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
+app.setName(APP_NAME);
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     ...getInitialWindowBounds(),
     icon: getAppIconPath(),
-    title: "Mosaic",
+    title: APP_NAME,
     backgroundColor: "#15171d",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -42,7 +45,7 @@ function buildMenu() {
     ...(process.platform === "darwin"
       ? [
           {
-            label: app.name,
+            label: APP_NAME,
             submenu: [{ role: "about" }, { type: "separator" }, { role: "quit" }],
           },
         ]

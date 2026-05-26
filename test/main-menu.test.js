@@ -2,6 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 
+test("main process uses Mosaic as the application name", async () => {
+  const source = await fs.readFile(new URL("../src/main/main.js", import.meta.url), "utf8");
+
+  assert.match(source, /const APP_NAME = "Mosaic";/);
+  assert.match(source, /app\.setName\(APP_NAME\)/);
+  assert.match(source, /label:\s*APP_NAME/);
+});
+
 test("application menu exposes the pan hand tool shortcut without a separate move tool", async () => {
   const source = await fs.readFile(new URL("../src/main/main.js", import.meta.url), "utf8");
 

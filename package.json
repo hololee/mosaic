@@ -1,5 +1,6 @@
 {
   "name": "mosaic",
+  "productName": "Mosaic",
   "version": "1.0.0",
   "description": "A non-destructive Electron mosaic editor for local images and clipboard workflows.",
   "main": "src/main/main.js",
@@ -7,7 +8,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "start": "electron .",
+    "start": "node scripts/start-dev.mjs",
     "test": "node --test",
     "check": "npm test"
   },
