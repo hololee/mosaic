@@ -4,11 +4,12 @@
   "version": "1.0.0",
   "description": "A non-destructive Electron mosaic editor for local images and clipboard workflows.",
   "main": "src/main/main.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
     "start": "node scripts/start-dev.mjs",
+    "prepare-build-assets": "node scripts/prepare-build-assets.mjs",
+    "dist": "npm run dist:mac && npm run dist:win",
+    "dist:mac": "npm run prepare-build-assets && electron-builder --mac dmg",
+    "dist:win": "npm run prepare-build-assets && electron-builder --win nsis --x64",
     "test": "node --test",
     "check": "npm test"
   },
@@ -21,7 +22,50 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "build": {
+    "appId": "com.hololee.mosaic",
+    "productName": "Mosaic",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg"
+        }
+      ]
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-${version}-Setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
   "devDependencies": {
-    "electron": "^42.2.0"
+    "electron": "^42.2.0",
+    "electron-builder": "^26.8.1"
   }
 }
