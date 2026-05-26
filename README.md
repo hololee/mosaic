@@ -9,6 +9,11 @@ npm install
 npm start
 ```
 
+## Build
+
+- [macOS build guide](https://github.com/hololee/mosaic/wiki/macOS-Build)
+- [Windows build guide](https://github.com/hololee/mosaic/wiki/Windows-Build)
+
 ## Shortcuts
 
 - Open: `CmdOrCtrl+O`
@@ -24,4 +29,3 @@ npm start
 ## Project Files
 
 `.msc` files are JSON project documents containing the original image data URL, editable mask geometry, and editor settings. Exported PNG/JPG files are flattened images with the mosaic permanently applied.
-
