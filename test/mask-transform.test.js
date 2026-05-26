@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { resizeMask } from "../src/shared/mask-transform.js";
+import { MIN_RESIZE_SIZE, resizeMask } from "../src/shared/mask-transform.js";
 
 test("resizeMask changes rectangle bounds from the dragged edge", () => {
   const mask = { id: "a", type: "rectangle", x: 20, y: 30, width: 100, height: 50, blockSize: 24 };
@@ -27,6 +27,17 @@ test("resizeMask keeps rectangles above a minimum size", () => {
     ...mask,
     x: 112,
     width: 8,
+  });
+});
+
+test("resizeMask uses a selectable default minimum size", () => {
+  const mask = { id: "a", type: "rectangle", x: 20, y: 30, width: 100, height: 50, blockSize: 24 };
+
+  assert.equal(MIN_RESIZE_SIZE, 24);
+  assert.deepEqual(resizeMask(mask, "se", { x: 120, y: 80 }, { x: 25, y: 35 }), {
+    ...mask,
+    width: 24,
+    height: 24,
   });
 });
 

@@ -1,6 +1,8 @@
 import { getMaskBounds } from "./outline.js";
 
-export function resizeMask(mask, handle, startPoint, currentPoint, minSize = 4) {
+export const MIN_RESIZE_SIZE = 24;
+
+export function resizeMask(mask, handle, startPoint, currentPoint, minSize = MIN_RESIZE_SIZE) {
   const originalBounds = getMaskBounds(mask);
   const nextBounds = resizeBounds(originalBounds, handle, currentPoint.x - startPoint.x, currentPoint.y - startPoint.y, minSize);
 
