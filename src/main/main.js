@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, nativeImage } fro
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getInitialWindowBounds } from "./window-options.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,10 +14,7 @@ const imageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 860,
-    minWidth: 860,
-    minHeight: 620,
+    ...getInitialWindowBounds(),
     title: "Mosaic",
     backgroundColor: "#15171d",
     webPreferences: {
@@ -299,4 +297,3 @@ function mimeForExtension(extension) {
 
   return "image/png";
 }
-
