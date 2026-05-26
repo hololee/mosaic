@@ -55,3 +55,12 @@ test("renderer supports the pan hand tool", async () => {
   assert.match(source, /state\.tool === "pan"/);
   assert.match(source, /return "grab";/);
 });
+
+test("renderer shows custom tooltips immediately", async () => {
+  const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
+
+  assert.match(source, /document\.querySelectorAll\("\[data-tooltip\]"\)/);
+  assert.match(source, /addEventListener\("pointerenter",/);
+  assert.match(source, /function showTooltip\(target\)/);
+  assert.match(source, /function positionTooltip\(target\)/);
+});

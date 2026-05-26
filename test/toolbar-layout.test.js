@@ -21,13 +21,16 @@ test("toolbar can wrap without being clipped by the page grid", async () => {
   assert.doesNotMatch(html, /class="spacer"/);
 });
 
-test("toolbar buttons expose native tooltips", async () => {
+test("toolbar buttons expose immediate custom tooltips", async () => {
   const html = await fs.readFile(new URL("../src/renderer/index.html", import.meta.url), "utf8");
   const buttons = [...html.matchAll(/<button\b[^>]*>/g)].map((match) => match[0]);
 
   assert.ok(buttons.length > 0);
   for (const button of buttons) {
-    assert.match(button, /\btitle="/, `${button} should have a title tooltip`);
+    assert.match(button, /\bdata-tooltip="/, `${button} should have a custom tooltip`);
     assert.match(button, /\baria-label="/, `${button} should have an accessible label`);
+    assert.doesNotMatch(button, /\btitle="/, `${button} should not use delayed native title tooltips`);
   }
+
+  assert.match(html, /id="tooltip"[\s\S]*role="tooltip"[\s\S]*hidden/);
 });

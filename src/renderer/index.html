@@ -9,20 +9,20 @@
   <body>
     <header class="toolbar">
       <div class="toolbar-group toolbar-file">
-        <button class="tool-button primary" id="openButton" type="button" title="Open image or project (Cmd/Ctrl+O)" aria-label="Open image or project">Open</button>
+        <button class="tool-button primary" id="openButton" type="button" data-tooltip="Open image or project (Cmd/Ctrl+O)" aria-label="Open image or project">Open</button>
       </div>
       <div class="toolbar-group toolbar-tools">
-        <button class="tool-button" data-tool="move" type="button" title="Move masks (V)" aria-label="Move masks">Move</button>
-        <button class="tool-button" data-tool="pan" type="button" title="Pan canvas (H)" aria-label="Pan canvas">Hand</button>
-        <button class="tool-button" data-tool="rectangle" type="button" title="Rectangle mask (R)" aria-label="Rectangle mask">Rect</button>
-        <button class="tool-button" data-tool="ellipse" type="button" title="Ellipse mask (O)" aria-label="Ellipse mask">Oval</button>
-        <button class="tool-button" data-tool="lasso" type="button" title="Lasso mask (L)" aria-label="Lasso mask">Lasso</button>
-        <button class="tool-button" data-tool="brush" type="button" title="Brush mask (B)" aria-label="Brush mask">Brush</button>
-        <button class="tool-button" data-tool="eraser" type="button" title="Erase masks (E)" aria-label="Erase masks">Erase</button>
+        <button class="tool-button" data-tool="move" type="button" data-tooltip="Move masks (V)" aria-label="Move masks">Move</button>
+        <button class="tool-button" data-tool="pan" type="button" data-tooltip="Pan canvas (H)" aria-label="Pan canvas">Hand</button>
+        <button class="tool-button" data-tool="rectangle" type="button" data-tooltip="Rectangle mask (R)" aria-label="Rectangle mask">Rect</button>
+        <button class="tool-button" data-tool="ellipse" type="button" data-tooltip="Ellipse mask (O)" aria-label="Ellipse mask">Oval</button>
+        <button class="tool-button" data-tool="lasso" type="button" data-tooltip="Lasso mask (L)" aria-label="Lasso mask">Lasso</button>
+        <button class="tool-button" data-tool="brush" type="button" data-tooltip="Brush mask (B)" aria-label="Brush mask">Brush</button>
+        <button class="tool-button" data-tool="eraser" type="button" data-tooltip="Erase masks (E)" aria-label="Erase masks">Erase</button>
       </div>
       <div class="toolbar-group toolbar-history">
-        <button class="icon-button" id="undoButton" type="button" title="Undo (Cmd/Ctrl+Z)" aria-label="Undo">Undo</button>
-        <button class="icon-button" id="redoButton" type="button" title="Redo (Cmd/Ctrl+Shift+Z)" aria-label="Redo">Redo</button>
+        <button class="icon-button" id="undoButton" type="button" data-tooltip="Undo (Cmd/Ctrl+Z)" aria-label="Undo">Undo</button>
+        <button class="icon-button" id="redoButton" type="button" data-tooltip="Redo (Cmd/Ctrl+Shift+Z)" aria-label="Redo">Redo</button>
       </div>
       <div class="toolbar-group toolbar-mosaic">
         <label class="slider-label">
@@ -32,19 +32,19 @@
         </label>
       </div>
       <div class="toolbar-group toolbar-view">
-        <button class="tool-button" id="fitButton" type="button" title="Fit image to window (Cmd/Ctrl+0)" aria-label="Fit image to window">Fit</button>
-        <button class="tool-button" id="actualButton" type="button" title="Actual size (Cmd/Ctrl+1)" aria-label="Actual size">100%</button>
+        <button class="tool-button" id="fitButton" type="button" data-tooltip="Fit image to window (Cmd/Ctrl+0)" aria-label="Fit image to window">Fit</button>
+        <button class="tool-button" id="actualButton" type="button" data-tooltip="Actual size (Cmd/Ctrl+1)" aria-label="Actual size">100%</button>
       </div>
       <div class="toolbar-group toolbar-output">
-        <button class="tool-button" id="saveButton" type="button" title="Save project (Cmd/Ctrl+S)" aria-label="Save project">Save</button>
-        <button class="tool-button" id="exportButton" type="button" title="Export PNG or JPG (Cmd/Ctrl+Shift+E)" aria-label="Export PNG or JPG">Export</button>
-        <button class="tool-button" id="clipboardButton" type="button" title="Export image to clipboard (Cmd/Ctrl+Alt+C)" aria-label="Export image to clipboard">Clipboard</button>
+        <button class="tool-button" id="saveButton" type="button" data-tooltip="Save project (Cmd/Ctrl+S)" aria-label="Save project">Save</button>
+        <button class="tool-button" id="exportButton" type="button" data-tooltip="Export PNG or JPG (Cmd/Ctrl+Shift+E)" aria-label="Export PNG or JPG">Export</button>
+        <button class="tool-button" id="clipboardButton" type="button" data-tooltip="Export image to clipboard (Cmd/Ctrl+Alt+C)" aria-label="Export image to clipboard">Clipboard</button>
       </div>
     </header>
 
     <main class="workspace">
       <canvas id="canvas"></canvas>
-      <button id="emptyOpenButton" class="empty-open" type="button" title="Open an image or project" aria-label="Open an image or project">
+      <button id="emptyOpenButton" class="empty-open" type="button" data-tooltip="Open an image or project" aria-label="Open an image or project">
         <strong>Open Image</strong>
         <span>Drop an image, paste from clipboard, or use the File menu.</span>
       </button>
@@ -54,6 +54,8 @@
       <span id="statusText">Ready</span>
       <span id="documentText">No document</span>
     </footer>
+
+    <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
 
     <script type="module" src="./app.js"></script>
   </body>

@@ -24,6 +24,7 @@ const statusText = document.querySelector("#statusText");
 const documentText = document.querySelector("#documentText");
 const blockSizeInput = document.querySelector("#blockSize");
 const blockSizeValue = document.querySelector("#blockSizeValue");
+const tooltip = document.querySelector("#tooltip");
 
 const ACTIVE_MASK_OUTLINE = "#68d391";
 const RESIZE_HANDLE_TOLERANCE = 7;
@@ -55,6 +56,7 @@ let imageSampleContext = null;
 
 setTool("rectangle");
 resizeCanvas();
+setupTooltips();
 draw();
 
 window.addEventListener("resize", () => {
@@ -75,6 +77,52 @@ document.querySelector("#actualButton").addEventListener("click", () => setZoom(
 document.querySelectorAll("[data-tool]").forEach((button) => {
   button.addEventListener("click", () => setTool(button.dataset.tool));
 });
+
+function setupTooltips() {
+  document.querySelectorAll("[data-tooltip]").forEach((target) => {
+    target.addEventListener("pointerenter", () => showTooltip(target));
+    target.addEventListener("focus", () => showTooltip(target));
+    target.addEventListener("pointerleave", hideTooltip);
+    target.addEventListener("blur", hideTooltip);
+    target.addEventListener("click", hideTooltip);
+  });
+
+  window.addEventListener("resize", hideTooltip);
+}
+
+function showTooltip(target) {
+  const text = target.dataset.tooltip;
+
+  if (!text) {
+    return;
+  }
+
+  tooltip.textContent = text;
+  tooltip.hidden = false;
+  positionTooltip(target);
+}
+
+function hideTooltip() {
+  tooltip.hidden = true;
+  tooltip.textContent = "";
+}
+
+function positionTooltip(target) {
+  const gap = 8;
+  const margin = 8;
+  const targetRect = target.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const maxLeft = window.innerWidth - tooltipRect.width - margin;
+  const left = Math.min(maxLeft, Math.max(margin, targetRect.left + targetRect.width / 2 - tooltipRect.width / 2));
+  const bottomTop = targetRect.bottom + gap;
+  const top =
+    bottomTop + tooltipRect.height <= window.innerHeight - margin
+      ? bottomTop
+      : Math.max(margin, targetRect.top - tooltipRect.height - gap);
+
+  tooltip.style.left = `${Math.round(left)}px`;
+  tooltip.style.top = `${Math.round(top)}px`;
+}
 
 blockSizeInput.addEventListener("input", applyBlockSizeInput);
 blockSizeInput.addEventListener("change", finishBlockSizeEdit);
