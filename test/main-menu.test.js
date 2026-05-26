@@ -22,3 +22,10 @@ test("application menu lists rectangle as the first drawing tool", async () => {
   assert.ok(panIndex > -1, "pan should be in the tools menu");
   assert.ok(rectangleIndex < panIndex, "rectangle should appear before pan");
 });
+
+test("main process applies the app icon to windows and macOS dock", async () => {
+  const source = await fs.readFile(new URL("../src/main/main.js", import.meta.url), "utf8");
+
+  assert.match(source, /icon:\s*getAppIconPath\(\)/);
+  assert.match(source, /app\.dock\?\.setIcon\(getAppIconPath\(\)\)/);
+});

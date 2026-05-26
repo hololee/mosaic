@@ -2,7 +2,7 @@ import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, nativeImage } fro
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getInitialWindowBounds } from "./window-options.js";
+import { getAppIconPath, getInitialWindowBounds } from "./window-options.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +15,7 @@ const imageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 function createWindow() {
   mainWindow = new BrowserWindow({
     ...getInitialWindowBounds(),
+    icon: getAppIconPath(),
     title: "Mosaic",
     backgroundColor: "#15171d",
     webPreferences: {
@@ -143,6 +144,7 @@ function buildMenu() {
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(buildMenu());
+  app.dock?.setIcon(getAppIconPath());
   createWindow();
 
   app.on("activate", () => {

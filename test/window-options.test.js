@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import path from "node:path";
 
-import { getInitialWindowBounds } from "../src/main/window-options.js";
+import { getAppIconPath, getInitialWindowBounds } from "../src/main/window-options.js";
 
 test("initial app window opens at minimum width with proportional height", () => {
   const bounds = getInitialWindowBounds();
@@ -12,3 +13,9 @@ test("initial app window opens at minimum width with proportional height", () =>
   assert.equal(bounds.minHeight, 578);
 });
 
+test("window options expose the app icon path", () => {
+  const iconPath = getAppIconPath();
+
+  assert.equal(path.basename(iconPath), "icon.png");
+  assert.match(iconPath, /assets[/\\]icon\.png$/);
+});
