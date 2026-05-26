@@ -1,3 +1,13 @@
+<p align="center">
+  <img src="assets/readme-banner.svg" alt="Mosaic - Editable mosaic redaction" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/hololee/mosaic/releases/latest">
+    <img alt="Release" src="https://img.shields.io/github/v/release/hololee/mosaic?label=release" />
+  </a>
+</p>
+
 # Mosaic
 
 Mosaic is an Electron desktop app for non-destructive mosaic redaction. Open an image from disk or the clipboard, mark sensitive regions with shape tools, save an editable `.msc` project, or export a flattened PNG/JPG.

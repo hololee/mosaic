@@ -2,6 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 
+test("README starts with the banner and release badge", async () => {
+  const readme = await fs.readFile(new URL("../README.md", import.meta.url), "utf8");
+
+  assert.match(readme, /^<p align="center">\n  <img src="assets\/readme-banner.svg"/);
+  assert.match(readme, /https:\/\/img\.shields\.io\/github\/v\/release\/hololee\/mosaic\?label=release/);
+  assert.match(readme, /https:\/\/github\.com\/hololee\/mosaic\/releases\/latest/);
+});
+
 test("README links to platform build wiki pages", async () => {
   const readme = await fs.readFile(new URL("../README.md", import.meta.url), "utf8");
 
