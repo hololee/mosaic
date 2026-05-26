@@ -1,6 +1,7 @@
 import { createProject, parseProject, serializeProject } from "../shared/project.js";
 import { clampBlockSize } from "../shared/mosaic.js";
-import { getDeleteControlRect, pointInRect } from "../shared/mask-controls.js";
+import { getDeleteControlRect, getResizeCursor, getResizeHandleHit, pointInRect } from "../shared/mask-controls.js";
+import { resizeMask } from "../shared/mask-transform.js";
 import { getContrastingGrayRGBA, getMaskBounds, getRelativeLuminance } from "../shared/outline.js";
 
 const api = window.mosaicAPI ?? {
@@ -23,6 +24,7 @@ const blockSizeInput = document.querySelector("#blockSize");
 const blockSizeValue = document.querySelector("#blockSizeValue");
 
 const ACTIVE_MASK_OUTLINE = "#68d391";
+const RESIZE_HANDLE_TOLERANCE = 7;
 
 const state = {
   project: null,
@@ -564,6 +566,14 @@ function onPointerDown(event) {
     return;
   }
 
+  const resizeHit = getResizeControlHit(event);
+  if (resizeHit && state.tool !== "eraser") {
+    canvas.setPointerCapture(event.pointerId);
+    startResizingMask(resizeHit.mask, resizeHit.handle, imagePoint);
+    draw();
+    return;
+  }
+
   if (!pointInImage(imagePoint)) {
     return;
   }
@@ -630,6 +640,14 @@ function onPointerMove(event) {
     return;
   }
 
+  if (state.action === "resize") {
+    resizeSelectedMask(imagePoint);
+    state.pointer.changed =
+      imagePoint.x !== state.pointer.start.x || imagePoint.y !== state.pointer.start.y;
+    draw();
+    return;
+  }
+
   if (state.action === "draw") {
     state.pointer.last = imagePoint;
     if (state.tool === "lasso" || state.tool === "brush") {
@@ -661,6 +679,11 @@ function onPointerUp(event) {
     state.future = [];
   }
 
+  if (state.action === "resize" && state.pointer.changed) {
+    state.history.push(state.pointer.originalMasks);
+    state.future = [];
+  }
+
   state.action = null;
   state.pointer = null;
   state.draft = null;
@@ -684,6 +707,32 @@ function startMovingMask(mask, imagePoint) {
   };
 }
 
+function startResizingMask(mask, handle, imagePoint) {
+  state.selectedIds.clear();
+  state.selectedIds.add(mask.id);
+  state.hoveredId = mask.id;
+  state.action = "resize";
+  state.pointer = {
+    targetId: mask.id,
+    handle,
+    start: imagePoint,
+    originalMasks: cloneMasks(state.masks),
+    changed: false,
+  };
+}
+
+function resizeSelectedMask(imagePoint) {
+  const { targetId, handle, start, originalMasks } = state.pointer;
+
+  state.masks = originalMasks.map((mask) => {
+    if (mask.id !== targetId) {
+      return mask;
+    }
+
+    return resizeMask(mask, handle, start, imagePoint);
+  });
+}
+
 function updateHoverState(event) {
   const deleteHit = getDeleteControlHit(event);
   if (deleteHit) {
@@ -691,10 +740,20 @@ function updateHoverState(event) {
     return;
   }
 
+  const previousHoveredId = state.hoveredId;
+  const resizeHit = state.tool === "eraser" ? null : getResizeControlHit(event);
+  if (resizeHit) {
+    state.hoveredId = resizeHit.mask.id;
+    canvas.style.cursor = getResizeCursor(resizeHit.handle);
+    if (previousHoveredId !== state.hoveredId) {
+      draw();
+    }
+    return;
+  }
+
   const imagePoint = screenToImage(event);
   const hoveredMask = pointInImage(imagePoint) ? hitTest(imagePoint) : null;
   const nextHoveredId = hoveredMask?.id || null;
-  const previousHoveredId = state.hoveredId;
 
   state.hoveredId = nextHoveredId;
   canvas.style.cursor = getCanvasCursor(hoveredMask);
@@ -741,6 +800,21 @@ function getDeleteControlHit(event) {
 
 function getDeleteControlForMask(mask, view) {
   return getDeleteControlRect(getMaskBounds(mask), view, state.zoom, navigator.platform);
+}
+
+function getResizeControlHit(event) {
+  const canvasPoint = getCanvasPoint(event);
+  const view = getView();
+
+  for (const mask of [...state.masks].reverse()) {
+    const handle = getResizeHandleHit(getMaskBounds(mask), canvasPoint, view, state.zoom, RESIZE_HANDLE_TOLERANCE);
+
+    if (handle) {
+      return { mask, handle };
+    }
+  }
+
+  return null;
 }
 
 function getCanvasPoint(event) {
