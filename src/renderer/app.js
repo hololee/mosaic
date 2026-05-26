@@ -4,6 +4,7 @@ import { getSelectionBlockSize, updateSelectedBlockSize } from "../shared/mask-s
 import { getDeleteControlRect, getResizeCursor, getResizeHandleHit, pointInRect } from "../shared/mask-controls.js";
 import { resizeMask } from "../shared/mask-transform.js";
 import { getContrastingGrayRGBA, getMaskBounds, getRelativeLuminance } from "../shared/outline.js";
+import { getWheelZoomFactor } from "../shared/zoom.js";
 
 const api = window.mosaicAPI ?? {
   openDialog: async () => ({ canceled: true }),
@@ -879,7 +880,7 @@ function onWheel(event) {
   }
 
   event.preventDefault();
-  const factor = event.deltaY > 0 ? 0.92 : 1.08;
+  const factor = getWheelZoomFactor(event.deltaY, event.deltaMode);
   setZoom(state.zoom * factor);
 }
 

@@ -41,3 +41,9 @@ test("renderer syncs block size controls with selected masks", async () => {
   assert.match(source, /getSelectionBlockSize\(state\.masks,\s*state\.selectedIds\)/);
   assert.match(source, /updateSelectedBlockSize\(state\.masks,\s*state\.selectedIds,\s*nextBlockSize\)/);
 });
+
+test("renderer scales wheel zoom by input delta", async () => {
+  const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
+
+  assert.match(source, /getWheelZoomFactor\(event\.deltaY,\s*event\.deltaMode\)/);
+});
