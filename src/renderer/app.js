@@ -20,6 +20,9 @@ const documentText = document.querySelector("#documentText");
 const blockSizeInput = document.querySelector("#blockSize");
 const blockSizeValue = document.querySelector("#blockSizeValue");
 
+const INACTIVE_MASK_OUTLINE = "rgba(238, 242, 247, 0.42)";
+const ACTIVE_MASK_OUTLINE = "#68d391";
+
 const state = {
   project: null,
   image: null,
@@ -297,13 +300,19 @@ function draw() {
     drawMaskMosaic(mask, view);
   }
 
+  for (const mask of state.masks) {
+    if (!state.selectedIds.has(mask.id)) {
+      drawMaskOutline(mask, view, INACTIVE_MASK_OUTLINE, 1);
+    }
+  }
+
   if (state.draft) {
     drawDraft(state.draft, view);
   }
 
   for (const mask of state.masks) {
     if (state.selectedIds.has(mask.id)) {
-      drawMaskOutline(mask, view, "#68d391", 2);
+      drawMaskOutline(mask, view, ACTIVE_MASK_OUTLINE, 2);
     }
   }
 
@@ -326,7 +335,7 @@ function drawDraft(mask, view) {
   ctx.scale(state.zoom, state.zoom);
   pathMask(ctx, mask);
   ctx.fillStyle = "rgba(104, 211, 145, 0.18)";
-  ctx.strokeStyle = "#68d391";
+  ctx.strokeStyle = ACTIVE_MASK_OUTLINE;
   ctx.lineWidth = 2 / state.zoom;
   ctx.fill();
   ctx.stroke();
