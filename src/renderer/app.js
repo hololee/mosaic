@@ -1,6 +1,6 @@
 import { createProject, parseProject, serializeProject } from "../shared/project.js";
 import { clampBlockSize } from "../shared/mosaic.js";
-import { getContrastingGrayOutline, getMaskSamplePoint, getRelativeLuminance } from "../shared/outline.js";
+import { getContrastingGrayRGBA, getMaskBounds, getRelativeLuminance } from "../shared/outline.js";
 
 const api = window.mosaicAPI ?? {
   openDialog: async () => ({ canceled: true }),
@@ -42,6 +42,7 @@ const state = {
 };
 
 const mosaicCache = new Map();
+const adaptiveOutlineCache = new Map();
 let imageSampleCanvas = null;
 let imageSampleContext = null;
 
@@ -305,7 +306,7 @@ function draw() {
 
   for (const mask of state.masks) {
     if (!state.selectedIds.has(mask.id)) {
-      drawMaskOutline(mask, view, getInactiveMaskOutline(mask), 1.25);
+      drawAdaptiveMaskOutline(mask, view, 1.25);
     }
   }
 
@@ -357,21 +358,75 @@ function drawMaskOutline(mask, view, color, lineWidth) {
   ctx.restore();
 }
 
-function getInactiveMaskOutline(mask) {
-  const point = getMaskSamplePoint(mask, state.image.naturalWidth, state.image.naturalHeight);
-  const [red, green, blue] = getImageSample(point);
-  return getContrastingGrayOutline(getRelativeLuminance([red, green, blue]));
+function drawAdaptiveMaskOutline(mask, view, lineWidth) {
+  const outline = getAdaptiveMaskOutline(mask, lineWidth);
+
+  if (!outline) {
+    return;
+  }
+
+  ctx.save();
+  ctx.translate(view.x, view.y);
+  ctx.scale(state.zoom, state.zoom);
+  ctx.drawImage(outline.canvas, outline.x, outline.y);
+  ctx.restore();
 }
 
-function getImageSample(point) {
-  const sampleContext = getImageSampleContext();
+function getAdaptiveMaskOutline(mask, lineWidth) {
+  const imageLineWidth = lineWidth / state.zoom;
+  const bounds = getOutlineBounds(mask, imageLineWidth);
 
-  try {
-    const data = sampleContext.getImageData(point.x, point.y, 1, 1).data;
-    return [data[0], data[1], data[2]];
-  } catch {
-    return [0, 0, 0];
+  if (bounds.width <= 0 || bounds.height <= 0) {
+    return null;
   }
+
+  const cacheKey = `${mask.id}:${state.zoom.toFixed(3)}:${lineWidth}:${JSON.stringify(mask)}:${bounds.x},${bounds.y},${bounds.width},${bounds.height}`;
+
+  if (adaptiveOutlineCache.has(cacheKey)) {
+    return adaptiveOutlineCache.get(cacheKey);
+  }
+
+  const alphaCanvas = document.createElement("canvas");
+  alphaCanvas.width = bounds.width;
+  alphaCanvas.height = bounds.height;
+  const alphaContext = alphaCanvas.getContext("2d");
+  alphaContext.translate(-bounds.x, -bounds.y);
+  pathMask(alphaContext, mask);
+  alphaContext.strokeStyle = "white";
+  alphaContext.lineWidth = imageLineWidth;
+  alphaContext.setLineDash([6 / state.zoom, 4 / state.zoom]);
+  alphaContext.stroke();
+
+  const alphaData = alphaContext.getImageData(0, 0, bounds.width, bounds.height);
+  const imageData = getImageSampleContext().getImageData(bounds.x, bounds.y, bounds.width, bounds.height);
+  const outlineData = new ImageData(bounds.width, bounds.height);
+
+  for (let index = 0; index < alphaData.data.length; index += 4) {
+    const alpha = alphaData.data[index + 3];
+
+    if (!alpha) {
+      continue;
+    }
+
+    const red = imageData.data[index];
+    const green = imageData.data[index + 1];
+    const blue = imageData.data[index + 2];
+    const [outlineRed, outlineGreen, outlineBlue, outlineAlpha] = getContrastingGrayRGBA(getRelativeLuminance([red, green, blue]));
+
+    outlineData.data[index] = outlineRed;
+    outlineData.data[index + 1] = outlineGreen;
+    outlineData.data[index + 2] = outlineBlue;
+    outlineData.data[index + 3] = Math.round((alpha / 255) * outlineAlpha);
+  }
+
+  const outlineCanvas = document.createElement("canvas");
+  outlineCanvas.width = bounds.width;
+  outlineCanvas.height = bounds.height;
+  outlineCanvas.getContext("2d").putImageData(outlineData, 0, 0);
+
+  const outline = { canvas: outlineCanvas, x: bounds.x, y: bounds.y };
+  adaptiveOutlineCache.set(cacheKey, outline);
+  return outline;
 }
 
 function getImageSampleContext() {
@@ -388,8 +443,29 @@ function getImageSampleContext() {
 
 function clearImageCaches() {
   mosaicCache.clear();
+  adaptiveOutlineCache.clear();
   imageSampleCanvas = null;
   imageSampleContext = null;
+}
+
+function getOutlineBounds(mask, imageLineWidth) {
+  const bounds = getMaskBounds(mask);
+  const pad = Math.ceil(imageLineWidth + 2);
+  const x = clampNumber(Math.floor(bounds.x - pad), 0, state.image.naturalWidth);
+  const y = clampNumber(Math.floor(bounds.y - pad), 0, state.image.naturalHeight);
+  const right = clampNumber(Math.ceil(bounds.x + bounds.width + pad), 0, state.image.naturalWidth);
+  const bottom = clampNumber(Math.ceil(bounds.y + bounds.height + pad), 0, state.image.naturalHeight);
+
+  return {
+    x,
+    y,
+    width: Math.max(0, right - x),
+    height: Math.max(0, bottom - y),
+  };
+}
+
+function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function getMosaicCanvas(blockSize) {

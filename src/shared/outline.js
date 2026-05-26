@@ -1,5 +1,7 @@
 const LIGHT_GRAY_OUTLINE = "rgba(245, 245, 245, 0.72)";
 const DARK_GRAY_OUTLINE = "rgba(18, 18, 18, 0.72)";
+const LIGHT_GRAY_RGBA = [245, 245, 245, 184];
+const DARK_GRAY_RGBA = [18, 18, 18, 184];
 
 export function getRelativeLuminance(rgb) {
   const [red, green, blue] = rgb;
@@ -8,6 +10,10 @@ export function getRelativeLuminance(rgb) {
 
 export function getContrastingGrayOutline(luminance) {
   return luminance >= 150 ? DARK_GRAY_OUTLINE : LIGHT_GRAY_OUTLINE;
+}
+
+export function getContrastingGrayRGBA(luminance) {
+  return luminance >= 150 ? DARK_GRAY_RGBA : LIGHT_GRAY_RGBA;
 }
 
 export function getMaskSamplePoint(mask, imageWidth, imageHeight) {
@@ -19,7 +25,7 @@ export function getMaskSamplePoint(mask, imageWidth, imageHeight) {
   };
 }
 
-function getMaskBounds(mask) {
+export function getMaskBounds(mask) {
   if (mask.type === "rectangle" || mask.type === "ellipse") {
     return {
       x: mask.x,
@@ -45,4 +51,3 @@ function getMaskBounds(mask) {
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
-
