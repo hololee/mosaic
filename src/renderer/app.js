@@ -1,5 +1,6 @@
 import { createProject, parseProject, serializeProject } from "../shared/project.js";
 import { clampBlockSize } from "../shared/mosaic.js";
+import { getDeleteControlRect, pointInRect } from "../shared/mask-controls.js";
 import { getContrastingGrayRGBA, getMaskBounds, getRelativeLuminance } from "../shared/outline.js";
 
 const api = window.mosaicAPI ?? {
@@ -32,6 +33,7 @@ const state = {
   pan: { x: 0, y: 0 },
   masks: [],
   selectedIds: new Set(),
+  hoveredId: null,
   history: [],
   future: [],
   draft: null,
@@ -81,6 +83,7 @@ canvas.addEventListener("pointerdown", onPointerDown);
 canvas.addEventListener("pointermove", onPointerMove);
 canvas.addEventListener("pointerup", onPointerUp);
 canvas.addEventListener("pointercancel", onPointerUp);
+canvas.addEventListener("pointerleave", clearHoverState);
 canvas.addEventListener("wheel", onWheel, { passive: false });
 
 document.addEventListener("keydown", onKeyDown);
@@ -190,6 +193,7 @@ async function loadProjectContent(content) {
   state.history = [];
   state.future = [];
   state.selectedIds.clear();
+  state.hoveredId = null;
   clearImageCaches();
   blockSizeInput.value = String(state.blockSize);
   blockSizeValue.value = String(state.blockSize);
@@ -211,6 +215,7 @@ async function loadImageDocument(source) {
   state.history = [];
   state.future = [];
   state.selectedIds.clear();
+  state.hoveredId = null;
   clearImageCaches();
   resetView();
   syncDocumentText();
@@ -320,6 +325,11 @@ function draw() {
     }
   }
 
+  const hoveredMask = state.hoveredId ? state.masks.find((mask) => mask.id === state.hoveredId) : null;
+  if (hoveredMask && !state.action) {
+    drawDeleteControl(hoveredMask, view);
+  }
+
   syncDocumentText();
 }
 
@@ -370,6 +380,46 @@ function drawAdaptiveMaskOutline(mask, view, lineWidth) {
   ctx.scale(state.zoom, state.zoom);
   ctx.drawImage(outline.canvas, outline.x, outline.y);
   ctx.restore();
+}
+
+function drawDeleteControl(mask, view) {
+  const control = getDeleteControlForMask(mask, view);
+  const radius = 5;
+  const pad = 6;
+
+  ctx.save();
+  pathRoundedRect(ctx, control.x, control.y, control.width, control.height, radius);
+  ctx.fillStyle = "rgba(17, 19, 24, 0.9)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.82)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(control.x + pad, control.y + pad);
+  ctx.lineTo(control.x + control.width - pad, control.y + control.height - pad);
+  ctx.moveTo(control.x + control.width - pad, control.y + pad);
+  ctx.lineTo(control.x + pad, control.y + control.height - pad);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.96)";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.stroke();
+  ctx.restore();
+}
+
+function pathRoundedRect(targetCtx, x, y, width, height, radius) {
+  const corner = Math.min(radius, width / 2, height / 2);
+
+  targetCtx.beginPath();
+  targetCtx.moveTo(x + corner, y);
+  targetCtx.lineTo(x + width - corner, y);
+  targetCtx.quadraticCurveTo(x + width, y, x + width, y + corner);
+  targetCtx.lineTo(x + width, y + height - corner);
+  targetCtx.quadraticCurveTo(x + width, y + height, x + width - corner, y + height);
+  targetCtx.lineTo(x + corner, y + height);
+  targetCtx.quadraticCurveTo(x, y + height, x, y + height - corner);
+  targetCtx.lineTo(x, y + corner);
+  targetCtx.quadraticCurveTo(x, y, x + corner, y);
 }
 
 function getAdaptiveMaskOutline(mask, lineWidth) {
@@ -499,16 +549,31 @@ function onPointerDown(event) {
     return;
   }
 
-  canvas.setPointerCapture(event.pointerId);
   const imagePoint = screenToImage(event);
 
   if (event.button === 1 || state.spacePressed) {
+    canvas.setPointerCapture(event.pointerId);
     state.action = "pan";
     state.pointer = { x: event.clientX, y: event.clientY, pan: { ...state.pan } };
     return;
   }
 
+  const deleteHit = getDeleteControlHit(event);
+  if (deleteHit) {
+    deleteMask(deleteHit.id);
+    return;
+  }
+
   if (!pointInImage(imagePoint)) {
+    return;
+  }
+
+  canvas.setPointerCapture(event.pointerId);
+
+  const existingMask = hitTest(imagePoint);
+  if (existingMask && state.tool !== "eraser") {
+    startMovingMask(existingMask, imagePoint);
+    draw();
     return;
   }
 
@@ -520,19 +585,7 @@ function onPointerDown(event) {
   }
 
   if (state.tool === "move") {
-    const hit = hitTest(imagePoint);
-    if (hit) {
-      if (!state.selectedIds.has(hit.id)) {
-        state.selectedIds.clear();
-        state.selectedIds.add(hit.id);
-      }
-      state.action = "move";
-      state.pointer = {
-        last: imagePoint,
-        originalMasks: cloneMasks(state.masks),
-        changed: false,
-      };
-    }
+    state.selectedIds.clear();
     draw();
     return;
   }
@@ -544,7 +597,12 @@ function onPointerDown(event) {
 }
 
 function onPointerMove(event) {
-  if (!state.image || !state.action) {
+  if (!state.image) {
+    return;
+  }
+
+  if (!state.action) {
+    updateHoverState(event);
     return;
   }
 
@@ -608,7 +666,89 @@ function onPointerUp(event) {
   state.draft = null;
   canvas.releasePointerCapture(event.pointerId);
   syncProject();
+  updateHoverState(event);
   draw();
+}
+
+function startMovingMask(mask, imagePoint) {
+  if (!state.selectedIds.has(mask.id)) {
+    state.selectedIds.clear();
+    state.selectedIds.add(mask.id);
+  }
+
+  state.action = "move";
+  state.pointer = {
+    last: imagePoint,
+    originalMasks: cloneMasks(state.masks),
+    changed: false,
+  };
+}
+
+function updateHoverState(event) {
+  const deleteHit = getDeleteControlHit(event);
+  if (deleteHit) {
+    canvas.style.cursor = "pointer";
+    return;
+  }
+
+  const imagePoint = screenToImage(event);
+  const hoveredMask = pointInImage(imagePoint) ? hitTest(imagePoint) : null;
+  const nextHoveredId = hoveredMask?.id || null;
+  const previousHoveredId = state.hoveredId;
+
+  state.hoveredId = nextHoveredId;
+  canvas.style.cursor = getCanvasCursor(hoveredMask);
+
+  if (previousHoveredId !== state.hoveredId) {
+    draw();
+  }
+}
+
+function clearHoverState() {
+  if (!state.hoveredId) {
+    return;
+  }
+
+  state.hoveredId = null;
+  canvas.style.cursor = "";
+  draw();
+}
+
+function getCanvasCursor(hoveredMask) {
+  if (hoveredMask && state.tool !== "eraser") {
+    return "move";
+  }
+
+  if (state.spacePressed) {
+    return "grab";
+  }
+
+  return state.tool === "move" ? "default" : "crosshair";
+}
+
+function getDeleteControlHit(event) {
+  if (!state.hoveredId) {
+    return null;
+  }
+
+  const hoveredMask = state.masks.find((mask) => mask.id === state.hoveredId);
+  if (!hoveredMask) {
+    return null;
+  }
+
+  return pointInRect(getCanvasPoint(event), getDeleteControlForMask(hoveredMask, getView())) ? hoveredMask : null;
+}
+
+function getDeleteControlForMask(mask, view) {
+  return getDeleteControlRect(getMaskBounds(mask), view, state.zoom, navigator.platform);
+}
+
+function getCanvasPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  };
 }
 
 function onWheel(event) {
@@ -901,6 +1041,9 @@ function commitMasks(nextMasks, selectedIds = []) {
   state.future = [];
   state.masks = cloneMasks(nextMasks);
   state.selectedIds = new Set(selectedIds);
+  if (state.hoveredId && !state.masks.some((mask) => mask.id === state.hoveredId)) {
+    state.hoveredId = null;
+  }
   syncProject();
   draw();
 }
@@ -913,6 +1056,7 @@ function undo() {
   state.future.push(cloneMasks(state.masks));
   state.masks = state.history.pop();
   state.selectedIds.clear();
+  state.hoveredId = null;
   syncProject();
   draw();
 }
@@ -925,6 +1069,7 @@ function redo() {
   state.history.push(cloneMasks(state.masks));
   state.masks = state.future.pop();
   state.selectedIds.clear();
+  state.hoveredId = null;
   syncProject();
   draw();
 }
@@ -938,6 +1083,14 @@ function deleteSelection() {
     state.masks.filter((mask) => !state.selectedIds.has(mask.id)),
     [],
   );
+}
+
+function deleteMask(maskId) {
+  commitMasks(
+    state.masks.filter((mask) => mask.id !== maskId),
+    [],
+  );
+  showStatus("Mosaic area deleted");
 }
 
 function selectAllMasks() {
