@@ -88,3 +88,9 @@ test("renderer shows custom tooltips immediately", async () => {
   assert.match(source, /function showTooltip\(target\)/);
   assert.match(source, /function positionTooltip\(target\)/);
 });
+
+test("renderer opens clipboard images from the toolbar", async () => {
+  const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
+
+  assert.match(source, /document\.querySelector\("#clipboardOpenButton"\)\.addEventListener\("click", newFromClipboard\);/);
+});

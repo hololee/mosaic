@@ -65,6 +65,7 @@ window.addEventListener("resize", () => {
 });
 
 document.querySelector("#openButton").addEventListener("click", openFromDialog);
+document.querySelector("#clipboardOpenButton").addEventListener("click", newFromClipboard);
 emptyOpenButton.addEventListener("click", openFromDialog);
 document.querySelector("#saveButton").addEventListener("click", () => saveProject(false));
 document.querySelector("#exportButton").addEventListener("click", exportImage);

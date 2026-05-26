@@ -9,7 +9,12 @@
   <body>
     <header class="toolbar">
       <div class="toolbar-group toolbar-file">
-        <button class="tool-button primary" id="openButton" type="button" data-tooltip="Open image or project (Cmd/Ctrl+O)" aria-label="Open image or project">Open</button>
+        <button class="tool-button primary icon-only" id="openButton" type="button" data-tooltip="Open image or project (Cmd/Ctrl+O)" aria-label="Open image or project">
+          <img class="toolbar-icon" src="./assets/toolbar/open-file.png" alt="" aria-hidden="true" />
+        </button>
+        <button class="tool-button primary icon-only" id="clipboardOpenButton" type="button" data-tooltip="Open image from clipboard (Cmd/Ctrl+Alt+V)" aria-label="Open image from clipboard">
+          <img class="toolbar-icon" src="./assets/toolbar/open-clipboard.png" alt="" aria-hidden="true" />
+        </button>
       </div>
       <div class="toolbar-group toolbar-tools">
         <button class="tool-button icon-only" data-tool="rectangle" type="button" data-tooltip="Rectangle mask (R)" aria-label="Rectangle mask">

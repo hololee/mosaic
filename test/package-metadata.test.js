@@ -11,7 +11,7 @@ test("package metadata exposes Mosaic as the product name", async () => {
 test("package metadata is versioned for the auto update release", async () => {
   const packageJson = JSON.parse(await fs.readFile(new URL("../package.json", import.meta.url), "utf8"));
 
-  assert.equal(packageJson.version, "0.1.3");
+  assert.equal(packageJson.version, "0.1.4");
 });
 
 test("start script uses the Mosaic-named development launcher", async () => {

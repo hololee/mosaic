@@ -10,7 +10,7 @@ test("toolbar can wrap without being clipped by the page grid", async () => {
   assert.match(css, /\.toolbar,\s*\n\.statusbar\s*{[^}]*align-items:\s*center;/s);
   assert.match(css, /\.toolbar\s*{[^}]*flex-wrap:\s*wrap;/s);
   assert.match(css, /\.toolbar\s*{[^}]*min-height:\s*48px;/s);
-  assert.match(html, /<div class="toolbar-group toolbar-file">[\s\S]*id="openButton"[\s\S]*<\/div>/);
+  assert.match(html, /<div class="toolbar-group toolbar-file">[\s\S]*id="openButton"[\s\S]*id="clipboardOpenButton"[\s\S]*<\/div>/);
   assert.match(html, /<div class="toolbar-group toolbar-tools">[\s\S]*data-tool="rectangle"[\s\S]*data-tool="ellipse"[\s\S]*data-tool="lasso"[\s\S]*data-tool="pan"[\s\S]*<\/div>/);
   assert.doesNotMatch(html, /data-tool="brush"/);
   assert.doesNotMatch(html, /data-tool="eraser"/);
@@ -42,6 +42,8 @@ test("toolbar replaces supplied text actions with fixed-height icon buttons", as
   const html = await fs.readFile(new URL("../src/renderer/index.html", import.meta.url), "utf8");
   const css = await fs.readFile(new URL("../src/renderer/styles.css", import.meta.url), "utf8");
   const icons = [
+    "open-file",
+    "open-clipboard",
     "rect",
     "oval",
     "lasso",
@@ -52,7 +54,7 @@ test("toolbar replaces supplied text actions with fixed-height icon buttons", as
     "export",
     "clipboard",
   ];
-  const replacedLabels = ["Rect", "Oval", "Lasso", "Hand", "Undo", "Redo", "Save", "Export", "Clipboard"];
+  const replacedLabels = ["Open", "Rect", "Oval", "Lasso", "Hand", "Undo", "Redo", "Save", "Export", "Clipboard"];
 
   for (const icon of icons) {
     assert.match(html, new RegExp(`<button[^>]*class="[^"]*icon-only[^"]*"[^>]*>[\\s\\S]*<img[^>]*src="./assets/toolbar/${icon}\\.png"`));
@@ -70,6 +72,8 @@ test("toolbar replaces supplied text actions with fixed-height icon buttons", as
 
 test("toolbar icon assets are app-sized png files", async () => {
   const icons = [
+    "open-file",
+    "open-clipboard",
     "rect",
     "oval",
     "lasso",
