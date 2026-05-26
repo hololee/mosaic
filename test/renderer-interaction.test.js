@@ -33,3 +33,11 @@ test("renderer draws and clears the hover delete control", async () => {
   assert.match(source, /drawDeleteControl\(hoveredMask,\s*view\);/);
   assert.match(source, /canvas\.addEventListener\("pointerleave", clearHoverState\);/);
 });
+
+test("renderer syncs block size controls with selected masks", async () => {
+  const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
+
+  assert.match(source, /function syncBlockSizeControl\(\)/);
+  assert.match(source, /getSelectionBlockSize\(state\.masks,\s*state\.selectedIds\)/);
+  assert.match(source, /updateSelectedBlockSize\(state\.masks,\s*state\.selectedIds,\s*nextBlockSize\)/);
+});

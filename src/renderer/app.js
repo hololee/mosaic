@@ -1,5 +1,6 @@
 import { createProject, parseProject, serializeProject } from "../shared/project.js";
 import { clampBlockSize } from "../shared/mosaic.js";
+import { getSelectionBlockSize, updateSelectedBlockSize } from "../shared/mask-settings.js";
 import { getDeleteControlRect, getResizeCursor, getResizeHandleHit, pointInRect } from "../shared/mask-controls.js";
 import { resizeMask } from "../shared/mask-transform.js";
 import { getContrastingGrayRGBA, getMaskBounds, getRelativeLuminance } from "../shared/outline.js";
@@ -41,6 +42,7 @@ const state = {
   draft: null,
   action: null,
   pointer: null,
+  blockSizeEditOriginalMasks: null,
   spacePressed: false,
   exportQuality: 0.92,
 };
@@ -73,13 +75,9 @@ document.querySelectorAll("[data-tool]").forEach((button) => {
   button.addEventListener("click", () => setTool(button.dataset.tool));
 });
 
-blockSizeInput.addEventListener("input", () => {
-  state.blockSize = clampBlockSize(blockSizeInput.value);
-  blockSizeValue.value = String(state.blockSize);
-  if (state.project) {
-    state.project.settings.blockSize = state.blockSize;
-  }
-});
+blockSizeInput.addEventListener("input", applyBlockSizeInput);
+blockSizeInput.addEventListener("change", finishBlockSizeEdit);
+blockSizeInput.addEventListener("blur", finishBlockSizeEdit);
 
 canvas.addEventListener("pointerdown", onPointerDown);
 canvas.addEventListener("pointermove", onPointerMove);
@@ -141,6 +139,7 @@ async function handleMenuCommand(command, payload) {
       break;
     case "deselect":
       state.selectedIds.clear();
+      syncBlockSizeControl();
       draw();
       break;
     case "tool":
@@ -197,8 +196,7 @@ async function loadProjectContent(content) {
   state.selectedIds.clear();
   state.hoveredId = null;
   clearImageCaches();
-  blockSizeInput.value = String(state.blockSize);
-  blockSizeValue.value = String(state.blockSize);
+  syncBlockSizeControl();
   resetView();
   syncDocumentText();
   draw();
@@ -219,6 +217,7 @@ async function loadImageDocument(source) {
   state.selectedIds.clear();
   state.hoveredId = null;
   clearImageCaches();
+  syncBlockSizeControl();
   resetView();
   syncDocumentText();
   draw();
@@ -261,6 +260,49 @@ async function exportToClipboard() {
   ensureDocument();
   await api.writeClipboardImage(renderExportDataUrl("image/png"));
   showStatus("Exported image to clipboard");
+}
+
+function applyBlockSizeInput() {
+  const nextBlockSize = clampBlockSize(blockSizeInput.value);
+  state.blockSize = nextBlockSize;
+  blockSizeValue.value = String(nextBlockSize);
+
+  if (state.selectedIds.size) {
+    if (!state.blockSizeEditOriginalMasks) {
+      state.blockSizeEditOriginalMasks = cloneMasks(state.masks);
+    }
+
+    state.masks = updateSelectedBlockSize(state.masks, state.selectedIds, nextBlockSize);
+    syncProject();
+    draw();
+    return;
+  }
+
+  if (state.project) {
+    state.project.settings.blockSize = nextBlockSize;
+  }
+}
+
+function finishBlockSizeEdit() {
+  if (!state.blockSizeEditOriginalMasks) {
+    return;
+  }
+
+  if (JSON.stringify(state.blockSizeEditOriginalMasks) !== JSON.stringify(state.masks)) {
+    state.history.push(state.blockSizeEditOriginalMasks);
+    state.future = [];
+  }
+
+  state.blockSizeEditOriginalMasks = null;
+  syncProject();
+}
+
+function syncBlockSizeControl() {
+  const selectedBlockSize = getSelectionBlockSize(state.masks, state.selectedIds);
+  const controlBlockSize = selectedBlockSize ?? state.blockSize;
+
+  blockSizeInput.value = String(controlBlockSize);
+  blockSizeValue.value = selectedBlockSize === null && state.selectedIds.size ? "Mixed" : String(controlBlockSize);
 }
 
 function renderExportDataUrl(type) {
@@ -596,6 +638,7 @@ function onPointerDown(event) {
 
   if (state.tool === "move") {
     state.selectedIds.clear();
+    syncBlockSizeControl();
     draw();
     return;
   }
@@ -667,6 +710,7 @@ function onPointerUp(event) {
   if (state.action === "draw" && state.draft && isUsableMask(state.draft)) {
     const mask = { ...normalizeMask(state.draft), id: crypto.randomUUID() };
     commitMasks([...state.masks, mask], [mask.id]);
+    syncBlockSizeControl();
   }
 
   if (state.action === "move" && state.pointer.changed) {
@@ -694,9 +738,11 @@ function onPointerUp(event) {
 }
 
 function startMovingMask(mask, imagePoint) {
+  finishBlockSizeEdit();
   if (!state.selectedIds.has(mask.id)) {
     state.selectedIds.clear();
     state.selectedIds.add(mask.id);
+    syncBlockSizeControl();
   }
 
   state.action = "move";
@@ -708,8 +754,10 @@ function startMovingMask(mask, imagePoint) {
 }
 
 function startResizingMask(mask, handle, imagePoint) {
+  finishBlockSizeEdit();
   state.selectedIds.clear();
   state.selectedIds.add(mask.id);
+  syncBlockSizeControl();
   state.hoveredId = mask.id;
   state.action = "resize";
   state.pointer = {
@@ -862,6 +910,7 @@ function onKeyDown(event) {
     deleteSelection();
   } else if (event.key === "Escape") {
     state.selectedIds.clear();
+    syncBlockSizeControl();
     draw();
   }
 }
@@ -1083,12 +1132,14 @@ function distanceToSegment(point, start, end) {
 }
 
 function eraseAt(point) {
+  finishBlockSizeEdit();
   const before = state.masks.length;
   state.masks = state.masks.filter((mask) => !maskContainsPoint(mask, point));
 
   if (state.masks.length !== before) {
     state.pointer.changed = true;
     state.selectedIds.clear();
+    syncBlockSizeControl();
     syncProject();
     draw();
   }
@@ -1111,10 +1162,12 @@ function moveSelectedMasks(dx, dy) {
 }
 
 function commitMasks(nextMasks, selectedIds = []) {
+  finishBlockSizeEdit();
   state.history.push(cloneMasks(state.masks));
   state.future = [];
   state.masks = cloneMasks(nextMasks);
   state.selectedIds = new Set(selectedIds);
+  syncBlockSizeControl();
   if (state.hoveredId && !state.masks.some((mask) => mask.id === state.hoveredId)) {
     state.hoveredId = null;
   }
@@ -1131,6 +1184,7 @@ function undo() {
   state.masks = state.history.pop();
   state.selectedIds.clear();
   state.hoveredId = null;
+  syncBlockSizeControl();
   syncProject();
   draw();
 }
@@ -1144,6 +1198,7 @@ function redo() {
   state.masks = state.future.pop();
   state.selectedIds.clear();
   state.hoveredId = null;
+  syncBlockSizeControl();
   syncProject();
   draw();
 }
@@ -1169,6 +1224,7 @@ function deleteMask(maskId) {
 
 function selectAllMasks() {
   state.selectedIds = new Set(state.masks.map((mask) => mask.id));
+  syncBlockSizeControl();
   draw();
 }
 
