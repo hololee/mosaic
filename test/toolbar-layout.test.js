@@ -10,6 +10,12 @@ test("toolbar can wrap without being clipped by the page grid", async () => {
   assert.match(css, /\.toolbar,\s*\n\.statusbar\s*{[^}]*align-items:\s*center;/s);
   assert.match(css, /\.toolbar\s*{[^}]*flex-wrap:\s*wrap;/s);
   assert.match(css, /\.toolbar\s*{[^}]*min-height:\s*48px;/s);
-  assert.match(html, /<div class="toolbar-secondary">[\s\S]*id="fitButton"[\s\S]*id="clipboardButton"[\s\S]*<\/div>/);
-  assert.match(css, /@media\s*\(max-width:\s*1040px\)\s*{[\s\S]*\.toolbar-secondary\s*{[\s\S]*flex-basis:\s*100%;/);
+  assert.match(html, /<div class="toolbar-group toolbar-file">[\s\S]*id="openButton"[\s\S]*<\/div>/);
+  assert.match(html, /<div class="toolbar-group toolbar-tools">[\s\S]*data-tool="move"[\s\S]*data-tool="eraser"[\s\S]*<\/div>/);
+  assert.match(html, /<div class="toolbar-group toolbar-history">[\s\S]*id="undoButton"[\s\S]*id="redoButton"[\s\S]*<\/div>/);
+  assert.match(html, /<div class="toolbar-group toolbar-mosaic">[\s\S]*id="blockSize"[\s\S]*<\/div>/);
+  assert.match(html, /<div class="toolbar-tail">[\s\S]*<div class="toolbar-group toolbar-view">[\s\S]*id="fitButton"[\s\S]*id="actualButton"[\s\S]*<\/div>[\s\S]*<div class="toolbar-group toolbar-output">[\s\S]*id="saveButton"[\s\S]*id="clipboardButton"[\s\S]*<\/div>[\s\S]*<\/div>/);
+  assert.match(css, /@media\s*\(max-width:\s*1120px\)\s*{[\s\S]*\.toolbar-tail\s*{[\s\S]*flex-basis:\s*100%;/);
+  assert.doesNotMatch(css, /margin-left:\s*auto;/);
+  assert.doesNotMatch(html, /class="spacer"/);
 });
