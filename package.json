@@ -1,0 +1,26 @@
+{
+  "name": "mosaic",
+  "version": "1.0.0",
+  "description": "A non-destructive Electron mosaic editor for local images and clipboard workflows.",
+  "main": "src/main/main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "check": "npm test"
+  },
+  "keywords": [
+    "electron",
+    "mosaic",
+    "redaction",
+    "canvas"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "electron": "^42.2.0"
+  }
+}
