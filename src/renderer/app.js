@@ -1,5 +1,6 @@
 import { createProject, parseProject, serializeProject } from "../shared/project.js";
 import { clampBlockSize } from "../shared/mosaic.js";
+import { getContrastingGrayOutline, getMaskSamplePoint, getRelativeLuminance } from "../shared/outline.js";
 
 const api = window.mosaicAPI ?? {
   openDialog: async () => ({ canceled: true }),
@@ -20,7 +21,6 @@ const documentText = document.querySelector("#documentText");
 const blockSizeInput = document.querySelector("#blockSize");
 const blockSizeValue = document.querySelector("#blockSizeValue");
 
-const INACTIVE_MASK_OUTLINE = "rgba(238, 242, 247, 0.42)";
 const ACTIVE_MASK_OUTLINE = "#68d391";
 
 const state = {
@@ -42,6 +42,8 @@ const state = {
 };
 
 const mosaicCache = new Map();
+let imageSampleCanvas = null;
+let imageSampleContext = null;
 
 setTool("rectangle");
 resizeCanvas();
@@ -187,6 +189,7 @@ async function loadProjectContent(content) {
   state.history = [];
   state.future = [];
   state.selectedIds.clear();
+  clearImageCaches();
   blockSizeInput.value = String(state.blockSize);
   blockSizeValue.value = String(state.blockSize);
   resetView();
@@ -207,7 +210,7 @@ async function loadImageDocument(source) {
   state.history = [];
   state.future = [];
   state.selectedIds.clear();
-  mosaicCache.clear();
+  clearImageCaches();
   resetView();
   syncDocumentText();
   draw();
@@ -302,7 +305,7 @@ function draw() {
 
   for (const mask of state.masks) {
     if (!state.selectedIds.has(mask.id)) {
-      drawMaskOutline(mask, view, INACTIVE_MASK_OUTLINE, 1);
+      drawMaskOutline(mask, view, getInactiveMaskOutline(mask), 1.25);
     }
   }
 
@@ -352,6 +355,41 @@ function drawMaskOutline(mask, view, color, lineWidth) {
   ctx.setLineDash([6 / state.zoom, 4 / state.zoom]);
   ctx.stroke();
   ctx.restore();
+}
+
+function getInactiveMaskOutline(mask) {
+  const point = getMaskSamplePoint(mask, state.image.naturalWidth, state.image.naturalHeight);
+  const [red, green, blue] = getImageSample(point);
+  return getContrastingGrayOutline(getRelativeLuminance([red, green, blue]));
+}
+
+function getImageSample(point) {
+  const sampleContext = getImageSampleContext();
+
+  try {
+    const data = sampleContext.getImageData(point.x, point.y, 1, 1).data;
+    return [data[0], data[1], data[2]];
+  } catch {
+    return [0, 0, 0];
+  }
+}
+
+function getImageSampleContext() {
+  if (!imageSampleCanvas) {
+    imageSampleCanvas = document.createElement("canvas");
+    imageSampleCanvas.width = state.image.naturalWidth;
+    imageSampleCanvas.height = state.image.naturalHeight;
+    imageSampleContext = imageSampleCanvas.getContext("2d");
+    imageSampleContext.drawImage(state.image, 0, 0);
+  }
+
+  return imageSampleContext;
+}
+
+function clearImageCaches() {
+  mosaicCache.clear();
+  imageSampleCanvas = null;
+  imageSampleContext = null;
 }
 
 function getMosaicCanvas(blockSize) {
