@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mosaic</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="toolbar">
+      <button class="tool-button primary" id="openButton" type="button">Open</button>
+      <div class="divider"></div>
+      <button class="tool-button" data-tool="move" type="button" title="Move (V)">Move</button>
+      <button class="tool-button" data-tool="rectangle" type="button" title="Rectangle (R)">Rect</button>
+      <button class="tool-button" data-tool="ellipse" type="button" title="Ellipse (O)">Oval</button>
+      <button class="tool-button" data-tool="lasso" type="button" title="Lasso (L)">Lasso</button>
+      <button class="tool-button" data-tool="brush" type="button" title="Brush (B)">Brush</button>
+      <button class="tool-button" data-tool="eraser" type="button" title="Eraser (E)">Erase</button>
+      <div class="divider"></div>
+      <button class="icon-button" id="undoButton" type="button" title="Undo">Undo</button>
+      <button class="icon-button" id="redoButton" type="button" title="Redo">Redo</button>
+      <label class="slider-label">
+        Block
+        <input id="blockSize" type="range" min="4" max="72" step="1" value="24" />
+        <output id="blockSizeValue">24</output>
+      </label>
+      <div class="spacer"></div>
+      <button class="tool-button" id="fitButton" type="button">Fit</button>
+      <button class="tool-button" id="actualButton" type="button">100%</button>
+      <button class="tool-button" id="saveButton" type="button">Save</button>
+      <button class="tool-button" id="exportButton" type="button">Export</button>
+      <button class="tool-button" id="clipboardButton" type="button">Clipboard</button>
+    </header>
+
+    <main class="workspace">
+      <canvas id="canvas"></canvas>
+      <button id="emptyOpenButton" class="empty-open" type="button">
+        <strong>Open Image</strong>
+        <span>Drop an image, paste from clipboard, or use the File menu.</span>
+      </button>
+    </main>
+
+    <footer class="statusbar">
+      <span id="statusText">Ready</span>
+      <span id="documentText">No document</span>
+    </footer>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
+
