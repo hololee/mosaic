@@ -656,7 +656,7 @@ function onPointerDown(event) {
   }
 
   const resizeHit = getResizeControlHit(event);
-  if (resizeHit && state.tool !== "eraser") {
+  if (resizeHit) {
     canvas.setPointerCapture(event.pointerId);
     startResizingMask(resizeHit.mask, resizeHit.handle, imagePoint);
     draw();
@@ -673,7 +673,7 @@ function onPointerDown(event) {
   canvas.setPointerCapture(event.pointerId);
 
   const existingMask = hitTest(imagePoint);
-  if (existingMask && state.tool !== "eraser") {
+  if (existingMask) {
     startMovingMask(existingMask, imagePoint);
     draw();
     return;
@@ -681,13 +681,6 @@ function onPointerDown(event) {
 
   if (state.tool === "pan" && event.button === 0) {
     startPanning(event);
-    return;
-  }
-
-  if (state.tool === "eraser") {
-    state.action = "erase";
-    state.pointer = { originalMasks: cloneMasks(state.masks), changed: false };
-    eraseAt(imagePoint);
     return;
   }
 
@@ -716,11 +709,6 @@ function onPointerMove(event) {
 
   const imagePoint = screenToImage(event);
 
-  if (state.action === "erase") {
-    eraseAt(imagePoint);
-    return;
-  }
-
   if (state.action === "move") {
     const dx = imagePoint.x - state.pointer.last.x;
     const dy = imagePoint.y - state.pointer.last.y;
@@ -741,7 +729,7 @@ function onPointerMove(event) {
 
   if (state.action === "draw") {
     state.pointer.last = imagePoint;
-    if (state.tool === "lasso" || state.tool === "brush") {
+    if (state.tool === "lasso") {
       state.draft.points.push(imagePoint);
     } else {
       state.draft = createDraftMask(state.pointer.start, imagePoint);
@@ -762,11 +750,6 @@ function onPointerUp(event) {
   }
 
   if (state.action === "move" && state.pointer.changed) {
-    state.history.push(state.pointer.originalMasks);
-    state.future = [];
-  }
-
-  if (state.action === "erase" && state.pointer.changed) {
     state.history.push(state.pointer.originalMasks);
     state.future = [];
   }
@@ -844,7 +827,7 @@ function updateHoverState(event) {
   }
 
   const previousHoveredId = state.hoveredId;
-  const resizeHit = state.tool === "eraser" ? null : getResizeControlHit(event);
+  const resizeHit = getResizeControlHit(event);
   if (resizeHit) {
     state.hoveredId = resizeHit.mask.id;
     canvas.style.cursor = getResizeCursor(resizeHit.handle);
@@ -877,7 +860,7 @@ function clearHoverState() {
 }
 
 function getCanvasCursor(hoveredMask) {
-  if (hoveredMask && state.tool !== "eraser") {
+  if (hoveredMask) {
     return "move";
   }
 
@@ -955,8 +938,6 @@ function onKeyDown(event) {
     r: "rectangle",
     o: "ellipse",
     l: "lasso",
-    b: "brush",
-    e: "eraser",
   };
 
   if (tools[key]) {
@@ -1009,15 +990,6 @@ async function onDrop(event) {
 function createDraftMask(start, current) {
   if (state.tool === "lasso") {
     return { type: "lasso", points: [start, current], blockSize: state.blockSize };
-  }
-
-  if (state.tool === "brush") {
-    return {
-      type: "brush",
-      points: [start, current],
-      radius: Math.max(6, state.blockSize / 2),
-      blockSize: state.blockSize,
-    };
   }
 
   return {
@@ -1184,20 +1156,6 @@ function distanceToSegment(point, start, end) {
   const x = start.x + t * dx;
   const y = start.y + t * dy;
   return Math.hypot(point.x - x, point.y - y);
-}
-
-function eraseAt(point) {
-  finishBlockSizeEdit();
-  const before = state.masks.length;
-  state.masks = state.masks.filter((mask) => !maskContainsPoint(mask, point));
-
-  if (state.masks.length !== before) {
-    state.pointer.changed = true;
-    state.selectedIds.clear();
-    syncBlockSizeControl();
-    syncProject();
-    draw();
-  }
 }
 
 function moveSelectedMasks(dx, dy) {

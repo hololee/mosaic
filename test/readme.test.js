@@ -27,3 +27,11 @@ test("README documents update checks and release metadata", async () => {
   assert.match(readme, /latest-mac\.yml/);
   assert.match(readme, /Check for Updates: `CmdOrCtrl\+Alt\+U`/);
 });
+
+test("README lists only the active drawing and pan tool shortcuts", async () => {
+  const readme = await fs.readFile(new URL("../README.md", import.meta.url), "utf8");
+
+  assert.match(readme, /Tools: `R`, `O`, `L`, `H`/);
+  assert.doesNotMatch(readme, /Tools: .*`B`/);
+  assert.doesNotMatch(readme, /Tools: .*`E`/);
+});

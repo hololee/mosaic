@@ -16,7 +16,7 @@ test("renderer checks delete and existing-mask interactions before shape drawing
   assert.ok(deleteHitIndex < resizeHitIndex, "delete affordance should take priority over resizing");
   assert.ok(resizeHitIndex < existingHitIndex, "resize handles should take priority over move selection");
   assert.ok(existingHitIndex < drawIndex, "existing masks should take priority over starting a new shape");
-  assert.match(source, /if \(existingMask && state\.tool !== "eraser"\)/);
+  assert.match(source, /if \(existingMask\)/);
 });
 
 test("renderer applies resize actions during pointer movement", async () => {
@@ -67,6 +67,17 @@ test("renderer supports the pan hand tool", async () => {
   assert.match(source, /return "grab";/);
   assert.ok(resizeHitIndex < panToolIndex, "pan tool should allow boundary resize before panning");
   assert.ok(existingHitIndex < panToolIndex, "pan tool should allow mask selection before panning");
+});
+
+test("renderer no longer exposes brush or eraser as selectable tools", async () => {
+  const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
+
+  assert.doesNotMatch(source, /b:\s*"brush"/);
+  assert.doesNotMatch(source, /e:\s*"eraser"/);
+  assert.doesNotMatch(source, /state\.tool === "brush"/);
+  assert.doesNotMatch(source, /state\.tool === "eraser"/);
+  assert.doesNotMatch(source, /state\.tool !== "eraser"/);
+  assert.doesNotMatch(source, /state\.action === "erase"/);
 });
 
 test("renderer shows custom tooltips immediately", async () => {

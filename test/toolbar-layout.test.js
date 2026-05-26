@@ -11,7 +11,9 @@ test("toolbar can wrap without being clipped by the page grid", async () => {
   assert.match(css, /\.toolbar\s*{[^}]*flex-wrap:\s*wrap;/s);
   assert.match(css, /\.toolbar\s*{[^}]*min-height:\s*48px;/s);
   assert.match(html, /<div class="toolbar-group toolbar-file">[\s\S]*id="openButton"[\s\S]*<\/div>/);
-  assert.match(html, /<div class="toolbar-group toolbar-tools">[\s\S]*data-tool="rectangle"[\s\S]*data-tool="eraser"[\s\S]*data-tool="pan"[\s\S]*<\/div>/);
+  assert.match(html, /<div class="toolbar-group toolbar-tools">[\s\S]*data-tool="rectangle"[\s\S]*data-tool="ellipse"[\s\S]*data-tool="lasso"[\s\S]*data-tool="pan"[\s\S]*<\/div>/);
+  assert.doesNotMatch(html, /data-tool="brush"/);
+  assert.doesNotMatch(html, /data-tool="eraser"/);
   assert.doesNotMatch(html, /data-tool="move"/);
   assert.match(html, /<div class="toolbar-group toolbar-history">[\s\S]*id="undoButton"[\s\S]*id="redoButton"[\s\S]*<\/div>/);
   assert.match(html, /<div class="toolbar-group toolbar-mosaic">[\s\S]*id="blockSize"[\s\S]*<\/div>/);

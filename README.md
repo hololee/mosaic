@@ -41,7 +41,7 @@ Release builds publish through `electron-updater`, so GitHub Releases must inclu
 - Export to Clipboard: `CmdOrCtrl+Alt+C`
 - Check for Updates: `CmdOrCtrl+Alt+U`
 - Undo/Redo: `CmdOrCtrl+Z`, `CmdOrCtrl+Shift+Z`
-- Tools: `R`, `O`, `L`, `B`, `E`, `H`
+- Tools: `R`, `O`, `L`, `H`
 
 ## Project Files
 

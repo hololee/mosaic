@@ -31,6 +31,17 @@ test("application menu lists rectangle as the first drawing tool", async () => {
   assert.ok(rectangleIndex < panIndex, "rectangle should appear before pan");
 });
 
+test("application menu no longer exposes brush or eraser tools", async () => {
+  const source = await fs.readFile(new URL("../src/main/main.js", import.meta.url), "utf8");
+
+  assert.doesNotMatch(source, /label:\s*"Brush"/);
+  assert.doesNotMatch(source, /label:\s*"Eraser"/);
+  assert.doesNotMatch(source, /tool:\s*"brush"/);
+  assert.doesNotMatch(source, /tool:\s*"eraser"/);
+  assert.doesNotMatch(source, /accelerator:\s*"B"/);
+  assert.doesNotMatch(source, /accelerator:\s*"E"/);
+});
+
 test("main process applies the app icon to windows and macOS dock", async () => {
   const source = await fs.readFile(new URL("../src/main/main.js", import.meta.url), "utf8");
 
