@@ -12,14 +12,26 @@
         <button class="tool-button primary" id="openButton" type="button" data-tooltip="Open image or project (Cmd/Ctrl+O)" aria-label="Open image or project">Open</button>
       </div>
       <div class="toolbar-group toolbar-tools">
-        <button class="tool-button" data-tool="rectangle" type="button" data-tooltip="Rectangle mask (R)" aria-label="Rectangle mask">Rect</button>
-        <button class="tool-button" data-tool="ellipse" type="button" data-tooltip="Ellipse mask (O)" aria-label="Ellipse mask">Oval</button>
-        <button class="tool-button" data-tool="lasso" type="button" data-tooltip="Lasso mask (L)" aria-label="Lasso mask">Lasso</button>
-        <button class="tool-button" data-tool="pan" type="button" data-tooltip="Pan canvas (H)" aria-label="Pan canvas">Hand</button>
+        <button class="tool-button icon-only" data-tool="rectangle" type="button" data-tooltip="Rectangle mask (R)" aria-label="Rectangle mask">
+          <img class="toolbar-icon" src="./assets/toolbar/rect.png" alt="" aria-hidden="true" />
+        </button>
+        <button class="tool-button icon-only" data-tool="ellipse" type="button" data-tooltip="Ellipse mask (O)" aria-label="Ellipse mask">
+          <img class="toolbar-icon" src="./assets/toolbar/oval.png" alt="" aria-hidden="true" />
+        </button>
+        <button class="tool-button icon-only" data-tool="lasso" type="button" data-tooltip="Lasso mask (L)" aria-label="Lasso mask">
+          <img class="toolbar-icon" src="./assets/toolbar/lasso.png" alt="" aria-hidden="true" />
+        </button>
+        <button class="tool-button icon-only" data-tool="pan" type="button" data-tooltip="Pan canvas (H)" aria-label="Pan canvas">
+          <img class="toolbar-icon" src="./assets/toolbar/pan.png" alt="" aria-hidden="true" />
+        </button>
       </div>
       <div class="toolbar-group toolbar-history">
-        <button class="icon-button" id="undoButton" type="button" data-tooltip="Undo (Cmd/Ctrl+Z)" aria-label="Undo">Undo</button>
-        <button class="icon-button" id="redoButton" type="button" data-tooltip="Redo (Cmd/Ctrl+Shift+Z)" aria-label="Redo">Redo</button>
+        <button class="icon-button icon-only" id="undoButton" type="button" data-tooltip="Undo (Cmd/Ctrl+Z)" aria-label="Undo">
+          <img class="toolbar-icon" src="./assets/toolbar/undo.png" alt="" aria-hidden="true" />
+        </button>
+        <button class="icon-button icon-only" id="redoButton" type="button" data-tooltip="Redo (Cmd/Ctrl+Shift+Z)" aria-label="Redo">
+          <img class="toolbar-icon" src="./assets/toolbar/redo.png" alt="" aria-hidden="true" />
+        </button>
       </div>
       <div class="toolbar-group toolbar-mosaic">
         <label class="slider-label">
@@ -33,9 +45,15 @@
         <button class="tool-button" id="actualButton" type="button" data-tooltip="Actual size (Cmd/Ctrl+1)" aria-label="Actual size">100%</button>
       </div>
       <div class="toolbar-group toolbar-output">
-        <button class="tool-button" id="saveButton" type="button" data-tooltip="Save project (Cmd/Ctrl+S)" aria-label="Save project">Save</button>
-        <button class="tool-button" id="exportButton" type="button" data-tooltip="Export PNG or JPG (Cmd/Ctrl+Shift+E)" aria-label="Export PNG or JPG">Export</button>
-        <button class="tool-button" id="clipboardButton" type="button" data-tooltip="Export image to clipboard (Cmd/Ctrl+Alt+C)" aria-label="Export image to clipboard">Clipboard</button>
+        <button class="tool-button icon-only" id="saveButton" type="button" data-tooltip="Save project (Cmd/Ctrl+S)" aria-label="Save project">
+          <img class="toolbar-icon" src="./assets/toolbar/save.png" alt="" aria-hidden="true" />
+        </button>
+        <button class="tool-button icon-only" id="exportButton" type="button" data-tooltip="Export PNG or JPG (Cmd/Ctrl+Shift+E)" aria-label="Export PNG or JPG">
+          <img class="toolbar-icon" src="./assets/toolbar/export.png" alt="" aria-hidden="true" />
+        </button>
+        <button class="tool-button icon-only" id="clipboardButton" type="button" data-tooltip="Export image to clipboard (Cmd/Ctrl+Alt+C)" aria-label="Export image to clipboard">
+          <img class="toolbar-icon" src="./assets/toolbar/clipboard.png" alt="" aria-hidden="true" />
+        </button>
       </div>
     </header>
 

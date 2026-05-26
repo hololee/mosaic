@@ -38,6 +38,57 @@ test("toolbar buttons expose immediate custom tooltips", async () => {
   assert.match(html, /id="tooltip"[\s\S]*role="tooltip"[\s\S]*hidden/);
 });
 
+test("toolbar replaces supplied text actions with fixed-height icon buttons", async () => {
+  const html = await fs.readFile(new URL("../src/renderer/index.html", import.meta.url), "utf8");
+  const css = await fs.readFile(new URL("../src/renderer/styles.css", import.meta.url), "utf8");
+  const icons = [
+    "rect",
+    "oval",
+    "lasso",
+    "pan",
+    "undo",
+    "redo",
+    "save",
+    "export",
+    "clipboard",
+  ];
+  const replacedLabels = ["Rect", "Oval", "Lasso", "Hand", "Undo", "Redo", "Save", "Export", "Clipboard"];
+
+  for (const icon of icons) {
+    assert.match(html, new RegExp(`<button[^>]*class="[^"]*icon-only[^"]*"[^>]*>[\\s\\S]*<img[^>]*src="./assets/toolbar/${icon}\\.png"`));
+    assert.match(html, new RegExp(`<img[^>]*src="./assets/toolbar/${icon}\\.png"[^>]*alt=""[^>]*aria-hidden="true"`));
+  }
+
+  for (const label of replacedLabels) {
+    assert.doesNotMatch(html, new RegExp(`>${label}<\\/button>`));
+  }
+
+  assert.match(css, /\.tool-button,\s*\n\.icon-button\s*{[^}]*height:\s*30px;/s);
+  assert.match(css, /\.icon-only\s*{[^}]*width:\s*30px;[^}]*min-width:\s*30px;[^}]*height:\s*30px;/s);
+  assert.match(css, /\.toolbar-icon\s*{[^}]*width:\s*20px;[^}]*height:\s*20px;/s);
+});
+
+test("toolbar icon assets are app-sized png files", async () => {
+  const icons = [
+    "rect",
+    "oval",
+    "lasso",
+    "pan",
+    "undo",
+    "redo",
+    "save",
+    "export",
+    "clipboard",
+  ];
+
+  for (const icon of icons) {
+    const data = await fs.readFile(new URL(`../src/renderer/assets/toolbar/${icon}.png`, import.meta.url));
+    assert.equal(data.toString("ascii", 1, 4), "PNG");
+    assert.equal(data.readUInt32BE(16), 128);
+    assert.equal(data.readUInt32BE(20), 128);
+  }
+});
+
 test("toolbar uses one blue accent for primary active and block controls", async () => {
   const css = await fs.readFile(new URL("../src/renderer/styles.css", import.meta.url), "utf8");
 

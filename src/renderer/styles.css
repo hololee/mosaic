@@ -85,6 +85,7 @@ input {
   background: var(--panel-2);
   color: var(--text);
   cursor: default;
+  padding: 0 10px;
 }
 
 .tool-button:hover,
@@ -104,6 +105,24 @@ input {
   background: var(--accent-strong);
   color: #061223;
   font-weight: 700;
+}
+
+.icon-only {
+  display: inline-grid;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+}
+
+.toolbar-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
 }
 
 .slider-label {
