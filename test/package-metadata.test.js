@@ -8,10 +8,10 @@ test("package metadata exposes Mosaic as the product name", async () => {
   assert.equal(packageJson.productName, "Mosaic");
 });
 
-test("package metadata is versioned for the initial release", async () => {
+test("package metadata is versioned for the keychain prompt patch release", async () => {
   const packageJson = JSON.parse(await fs.readFile(new URL("../package.json", import.meta.url), "utf8"));
 
-  assert.equal(packageJson.version, "0.1.0");
+  assert.equal(packageJson.version, "0.1.1");
 });
 
 test("start script uses the Mosaic-named development launcher", async () => {
