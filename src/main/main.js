@@ -119,7 +119,6 @@ function buildMenu() {
     {
       label: "Tools",
       submenu: [
-        { label: "Move", accelerator: "V", click: () => sendMenuCommand("tool", { tool: "move" }) },
         { label: "Pan", accelerator: "H", click: () => sendMenuCommand("tool", { tool: "pan" }) },
         { label: "Rectangle", accelerator: "R", click: () => sendMenuCommand("tool", { tool: "rectangle" }) },
         { label: "Ellipse", accelerator: "O", click: () => sendMenuCommand("tool", { tool: "ellipse" }) },

@@ -50,10 +50,16 @@ test("renderer scales wheel zoom by input delta", async () => {
 
 test("renderer supports the pan hand tool", async () => {
   const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
+  const resizeHitIndex = source.indexOf("const resizeHit = getResizeControlHit(event);");
+  const existingHitIndex = source.indexOf("const existingMask = hitTest(imagePoint);");
+  const panToolIndex = source.lastIndexOf('if (state.tool === "pan" && event.button === 0)');
 
   assert.match(source, /h:\s*"pan"/);
+  assert.doesNotMatch(source, /v:\s*"move"/);
   assert.match(source, /state\.tool === "pan"/);
   assert.match(source, /return "grab";/);
+  assert.ok(resizeHitIndex < panToolIndex, "pan tool should allow boundary resize before panning");
+  assert.ok(existingHitIndex < panToolIndex, "pan tool should allow mask selection before panning");
 });
 
 test("renderer shows custom tooltips immediately", async () => {
