@@ -596,10 +596,11 @@ function onPointerDown(event) {
 
   const imagePoint = screenToImage(event);
 
-  if (event.button === 1 || state.spacePressed) {
+  if (event.button === 1 || state.spacePressed || (state.tool === "pan" && event.button === 0)) {
     canvas.setPointerCapture(event.pointerId);
     state.action = "pan";
     state.pointer = { x: event.clientX, y: event.clientY, pan: { ...state.pan } };
+    canvas.style.cursor = "grabbing";
     return;
   }
 
@@ -790,7 +791,7 @@ function updateHoverState(event) {
   }
 
   const previousHoveredId = state.hoveredId;
-  const resizeHit = state.tool === "eraser" ? null : getResizeControlHit(event);
+  const resizeHit = state.tool === "eraser" || state.tool === "pan" ? null : getResizeControlHit(event);
   if (resizeHit) {
     state.hoveredId = resizeHit.mask.id;
     canvas.style.cursor = getResizeCursor(resizeHit.handle);
@@ -823,12 +824,12 @@ function clearHoverState() {
 }
 
 function getCanvasCursor(hoveredMask) {
-  if (hoveredMask && state.tool !== "eraser") {
-    return "move";
+  if (state.spacePressed || state.tool === "pan") {
+    return "grab";
   }
 
-  if (state.spacePressed) {
-    return "grab";
+  if (hoveredMask && state.tool !== "eraser") {
+    return "move";
   }
 
   return state.tool === "move" ? "default" : "crosshair";
@@ -898,6 +899,7 @@ function onKeyDown(event) {
   const key = event.key.toLowerCase();
   const tools = {
     v: "move",
+    h: "pan",
     r: "rectangle",
     o: "ellipse",
     l: "lasso",

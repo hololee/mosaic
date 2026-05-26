@@ -57,8 +57,7 @@ body {
   color: var(--muted);
 }
 
-.toolbar-group,
-.toolbar-tail {
+.toolbar-group {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -66,9 +65,7 @@ body {
   flex-wrap: wrap;
 }
 
-.toolbar > .toolbar-group + .toolbar-group,
-.toolbar > .toolbar-tail,
-.toolbar-tail > .toolbar-group + .toolbar-group {
+.toolbar > .toolbar-group + .toolbar-group {
   padding-left: 10px;
   border-left: 1px solid var(--line);
 }
@@ -122,15 +119,6 @@ input {
 .slider-label output {
   color: var(--text);
   text-align: right;
-}
-
-@media (max-width: 1120px) {
-  .toolbar-tail {
-    flex-basis: 100%;
-    justify-content: flex-start;
-    padding-left: 0;
-    border-left: 0;
-  }
 }
 
 .workspace {
