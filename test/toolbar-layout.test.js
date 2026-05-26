@@ -37,3 +37,14 @@ test("toolbar buttons expose immediate custom tooltips", async () => {
 
   assert.match(html, /id="tooltip"[\s\S]*role="tooltip"[\s\S]*hidden/);
 });
+
+test("toolbar uses one blue accent for primary active and block controls", async () => {
+  const css = await fs.readFile(new URL("../src/renderer/styles.css", import.meta.url), "utf8");
+
+  assert.match(css, /--accent:\s*#60a5fa;/);
+  assert.match(css, /--accent-strong:\s*#3b82f6;/);
+  assert.match(css, /\.tool-button\.active\s*{[^}]*border-color:\s*var\(--accent-strong\);/s);
+  assert.match(css, /\.tool-button\.primary\s*{[^}]*background:\s*var\(--accent-strong\);/s);
+  assert.match(css, /input\[type="range"\]\s*{[^}]*accent-color:\s*var\(--accent-strong\);/s);
+  assert.doesNotMatch(css, /#68d391|#41bd73|104,\s*211,\s*145|#dfffe9|#07140b/);
+});

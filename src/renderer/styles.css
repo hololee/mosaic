@@ -6,8 +6,8 @@
   --line: #3b414d;
   --text: #eef2f7;
   --muted: #aab3c2;
-  --accent: #68d391;
-  --accent-strong: #41bd73;
+  --accent: #60a5fa;
+  --accent-strong: #3b82f6;
   --danger: #ff7a8a;
 }
 
@@ -94,15 +94,15 @@ input {
 }
 
 .tool-button.active {
-  border-color: var(--accent);
-  background: rgba(104, 211, 145, 0.16);
-  color: #dfffe9;
+  border-color: var(--accent-strong);
+  background: rgba(59, 130, 246, 0.18);
+  color: #e8f2ff;
 }
 
 .tool-button.primary {
   border-color: var(--accent-strong);
   background: var(--accent-strong);
-  color: #07140b;
+  color: #061223;
   font-weight: 700;
 }
 
@@ -119,6 +119,10 @@ input {
 .slider-label output {
   color: var(--text);
   text-align: right;
+}
+
+input[type="range"] {
+  accent-color: var(--accent-strong);
 }
 
 .tooltip {

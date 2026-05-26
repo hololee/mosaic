@@ -26,7 +26,7 @@ const blockSizeInput = document.querySelector("#blockSize");
 const blockSizeValue = document.querySelector("#blockSizeValue");
 const tooltip = document.querySelector("#tooltip");
 
-const ACTIVE_MASK_OUTLINE = "#68d391";
+const ACTIVE_MASK_OUTLINE = "#3b82f6";
 const RESIZE_HANDLE_TOLERANCE = 7;
 
 const state = {
@@ -441,7 +441,7 @@ function drawDraft(mask, view) {
   ctx.translate(view.x, view.y);
   ctx.scale(state.zoom, state.zoom);
   pathMask(ctx, mask);
-  ctx.fillStyle = "rgba(104, 211, 145, 0.18)";
+  ctx.fillStyle = "rgba(59, 130, 246, 0.18)";
   ctx.strokeStyle = ACTIVE_MASK_OUTLINE;
   ctx.lineWidth = 2 / state.zoom;
   ctx.fill();
