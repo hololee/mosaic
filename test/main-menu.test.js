@@ -37,3 +37,11 @@ test("main process applies the app icon to windows and macOS dock", async () => 
   assert.match(source, /icon:\s*getAppIconPath\(\)/);
   assert.match(source, /app\.dock\?\.setIcon\(getAppIconPath\(\)\)/);
 });
+
+test("application menu exposes manual update checks", async () => {
+  const source = await fs.readFile(new URL("../src/main/main.js", import.meta.url), "utf8");
+
+  assert.match(source, /label:\s*"Check for Updates\.\.\."/);
+  assert.match(source, /accelerator:\s*"CmdOrCtrl\+Alt\+U"/);
+  assert.match(source, /updateController\.checkForUpdates\(\{\s*manual:\s*true\s*\}\)/);
+});

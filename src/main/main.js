@@ -1,13 +1,16 @@
-import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, nativeImage } from "electron";
+import { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, nativeImage, shell } from "electron";
+import electronUpdater from "electron-updater";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createUpdateController } from "./updater.js";
 import { getAppIconPath, getInitialWindowBounds } from "./window-options.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const APP_NAME = "Mosaic";
 const RENDERER_SESSION_PARTITION = "mosaic-temporary";
+const { autoUpdater } = electronUpdater;
 
 let mainWindow;
 let currentProjectPath = null;
@@ -19,6 +22,14 @@ if (process.platform === "darwin") {
 }
 
 app.setName(APP_NAME);
+
+const updateController = createUpdateController({
+  app,
+  autoUpdater,
+  dialog,
+  shell,
+  getWindow: () => mainWindow,
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -40,6 +51,14 @@ function createWindow() {
   });
 }
 
+function createCheckForUpdatesMenuItem() {
+  return {
+    label: "Check for Updates...",
+    accelerator: "CmdOrCtrl+Alt+U",
+    click: () => updateController.checkForUpdates({ manual: true }),
+  };
+}
+
 function sendMenuCommand(command, payload = {}) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send("menu-command", command, payload);
@@ -52,7 +71,7 @@ function buildMenu() {
       ? [
           {
             label: APP_NAME,
-            submenu: [{ role: "about" }, { type: "separator" }, { role: "quit" }],
+            submenu: [{ role: "about" }, { type: "separator" }, createCheckForUpdatesMenuItem(), { type: "separator" }, { role: "quit" }],
           },
         ]
       : []),
@@ -148,6 +167,14 @@ function buildMenu() {
         { role: "togglefullscreen" },
       ],
     },
+    ...(process.platform === "darwin"
+      ? []
+      : [
+          {
+            label: "Help",
+            submenu: [createCheckForUpdatesMenuItem()],
+          },
+        ]),
   ]);
 }
 
@@ -155,6 +182,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(buildMenu());
   app.dock?.setIcon(getAppIconPath());
   createWindow();
+  updateController.scheduleStartupCheck();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

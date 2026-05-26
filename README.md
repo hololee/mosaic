@@ -24,6 +24,12 @@ npm start
 - [macOS build guide](https://github.com/hololee/mosaic/wiki/macOS-Build)
 - [Windows build guide](https://github.com/hololee/mosaic/wiki/Windows-Build)
 
+## Updates
+
+Mosaic checks GitHub Releases for updates after launch. Use `Check for Updates...` from the app menu on macOS or the Help menu on Windows to check manually.
+
+Release builds publish through `electron-updater`, so GitHub Releases must include the generated update metadata alongside installers: `latest.yml`, `latest-mac.yml`, blockmaps, the Windows NSIS installer, and the macOS DMG/ZIP artifacts.
+
 ## Shortcuts
 
 - Open: `CmdOrCtrl+O`
@@ -33,8 +39,9 @@ npm start
 - Save As `.msc`: `CmdOrCtrl+Shift+S`
 - Export Image: `CmdOrCtrl+Shift+E`
 - Export to Clipboard: `CmdOrCtrl+Alt+C`
+- Check for Updates: `CmdOrCtrl+Alt+U`
 - Undo/Redo: `CmdOrCtrl+Z`, `CmdOrCtrl+Shift+Z`
-- Tools: `V`, `R`, `O`, `L`, `B`, `E`
+- Tools: `R`, `O`, `L`, `B`, `E`, `H`
 
 ## Project Files
 

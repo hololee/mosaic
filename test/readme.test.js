@@ -18,3 +18,12 @@ test("README links to platform build wiki pages", async () => {
   assert.match(readme, /Windows build guide/);
   assert.match(readme, /https:\/\/github\.com\/hololee\/mosaic\/wiki\/Windows-Build/);
 });
+
+test("README documents update checks and release metadata", async () => {
+  const readme = await fs.readFile(new URL("../README.md", import.meta.url), "utf8");
+
+  assert.match(readme, /Mosaic checks GitHub Releases for updates after launch/);
+  assert.match(readme, /latest\.yml/);
+  assert.match(readme, /latest-mac\.yml/);
+  assert.match(readme, /Check for Updates: `CmdOrCtrl\+Alt\+U`/);
+});
