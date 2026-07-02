@@ -35,3 +35,11 @@ test("README lists only the active drawing and pan tool shortcuts", async () => 
   assert.doesNotMatch(readme, /Tools: .*`B`/);
   assert.doesNotMatch(readme, /Tools: .*`E`/);
 });
+
+test("README documents animated GIF file workflows", async () => {
+  const readme = await fs.readFile(new URL("../README.md", import.meta.url), "utf8");
+
+  assert.match(readme, /animated GIF/i);
+  assert.match(readme, /file dialog, drag-and-drop, or export/i);
+  assert.match(readme, /Clipboard GIF animation is not supported/i);
+});

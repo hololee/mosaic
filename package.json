@@ -1,7 +1,7 @@
 {
   "name": "mosaic",
   "productName": "Mosaic",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A non-destructive Electron mosaic editor for local images and clipboard workflows.",
   "main": "src/main/main.js",
   "scripts": {
@@ -81,6 +81,8 @@
     "electron-builder": "^26.8.1"
   },
   "dependencies": {
-    "electron-updater": "^6.8.3"
+    "electron-updater": "^6.8.3",
+    "gifenc": "^1.0.3",
+    "gifuct-js": "^2.1.2"
   }
 }

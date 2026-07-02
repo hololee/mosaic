@@ -94,3 +94,14 @@ test("renderer opens clipboard images from the toolbar", async () => {
 
   assert.match(source, /document\.querySelector\("#clipboardOpenButton"\)\.addEventListener\("click", newFromClipboard\);/);
 });
+
+test("renderer decodes animated GIF documents and includes GIF export data", async () => {
+  const source = await fs.readFile(new URL("../src/renderer/app.js", import.meta.url), "utf8");
+
+  assert.match(source, /api\.decodeGif\(/);
+  assert.match(source, /api\.encodeGif\(/);
+  assert.match(source, /async function loadGifDocument\(source\)/);
+  assert.match(source, /function startGifPreview\(\)/);
+  assert.match(source, /function renderExportGifDataUrl\(\)/);
+  assert.match(source, /gifDataUrl:\s*await renderExportGifDataUrl\(\)/);
+});

@@ -56,3 +56,13 @@ test("application menu exposes manual update checks", async () => {
   assert.match(source, /accelerator:\s*"CmdOrCtrl\+Alt\+U"/);
   assert.match(source, /updateController\.checkForUpdates\(\{\s*manual:\s*true\s*\}\)/);
 });
+
+test("main process accepts GIF files and can export animated GIF data", async () => {
+  const source = await fs.readFile(new URL("../src/main/main.js", import.meta.url), "utf8");
+
+  assert.match(source, /imageExtensions = new Set\(\[[^\]]*"\.gif"/s);
+  assert.match(source, /extensions:\s*\[[^\]]*"gif"/s);
+  assert.match(source, /name:\s*"GIF Image"/);
+  assert.match(source, /payload\.gifDataUrl/);
+  assert.match(source, /return "image\/gif";/);
+});

@@ -11,7 +11,7 @@ test("package metadata exposes Mosaic as the product name", async () => {
 test("package metadata is versioned for the auto update release", async () => {
   const packageJson = JSON.parse(await fs.readFile(new URL("../package.json", import.meta.url), "utf8"));
 
-  assert.equal(packageJson.version, "0.1.4");
+  assert.equal(packageJson.version, "0.1.5");
 });
 
 test("start script uses the Mosaic-named development launcher", async () => {
@@ -57,4 +57,11 @@ test("electron-updater is packaged as an app dependency", async () => {
   const packageJson = JSON.parse(await fs.readFile(new URL("../package.json", import.meta.url), "utf8"));
 
   assert.ok(packageJson.dependencies["electron-updater"]);
+});
+
+test("GIF decode and encode libraries are packaged with the app", async () => {
+  const packageJson = JSON.parse(await fs.readFile(new URL("../package.json", import.meta.url), "utf8"));
+
+  assert.ok(packageJson.dependencies["gifuct-js"]);
+  assert.ok(packageJson.dependencies["gifenc"]);
 });

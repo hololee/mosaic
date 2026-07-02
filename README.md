@@ -10,7 +10,9 @@
 
 # Mosaic
 
-Mosaic is an Electron desktop app for non-destructive mosaic redaction. Open an image from disk or the clipboard, mark sensitive regions with shape tools, save an editable `.msc` project, or export a flattened PNG/JPG.
+Mosaic is an Electron desktop app for non-destructive mosaic redaction. Open an image from disk or the clipboard, mark sensitive regions with shape tools, save an editable `.msc` project, or export a flattened PNG/JPG/GIF.
+
+Animated GIF files are supported through the file dialog, drag-and-drop, or export. Mosaic applies fixed mask positions across every GIF frame. Clipboard GIF animation is not supported; clipboard import and export remain static image workflows.
 
 ## Run
 
@@ -45,4 +47,4 @@ Release builds publish through `electron-updater`, so GitHub Releases must inclu
 
 ## Project Files
 
-`.msc` files are JSON project documents containing the original image data URL, editable mask geometry, and editor settings. Exported PNG/JPG files are flattened images with the mosaic permanently applied.
+`.msc` files are JSON project documents containing the original image data URL, editable mask geometry, and editor settings. Exported PNG/JPG files are flattened images with the mosaic permanently applied. Exported GIF files are re-encoded animations with the same mosaic masks applied to each frame.

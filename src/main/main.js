@@ -3,6 +3,7 @@ import electronUpdater from "electron-updater";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { decodeGifDataUrl, encodeGifDataUrl } from "./gif.js";
 import { createUpdateController } from "./updater.js";
 import { getAppIconPath, getInitialWindowBounds } from "./window-options.js";
 
@@ -15,7 +16,7 @@ const { autoUpdater } = electronUpdater;
 let mainWindow;
 let currentProjectPath = null;
 
-const imageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp"]);
+const imageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
 
 if (process.platform === "darwin") {
   app.commandLine.appendSwitch("use-mock-keychain");
@@ -199,8 +200,8 @@ ipcMain.handle("open-dialog", async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ["openFile"],
     filters: [
-      { name: "Images and Mosaic Projects", extensions: ["png", "jpg", "jpeg", "webp", "msc"] },
-      { name: "Images", extensions: ["png", "jpg", "jpeg", "webp"] },
+      { name: "Images and Mosaic Projects", extensions: ["png", "jpg", "jpeg", "webp", "gif", "msc"] },
+      { name: "Images", extensions: ["png", "jpg", "jpeg", "webp", "gif"] },
       { name: "Mosaic Projects", extensions: ["msc"] },
     ],
   });
@@ -226,6 +227,10 @@ ipcMain.handle("read-clipboard-image", async () => {
     name: "Clipboard Image",
   };
 });
+
+ipcMain.handle("decode-gif", async (_event, dataUrl) => decodeGifDataUrl(dataUrl));
+
+ipcMain.handle("encode-gif", async (_event, payload) => encodeGifDataUrl(payload));
 
 ipcMain.handle("save-project", async (_event, payload) => {
   const saveAs = Boolean(payload.saveAs);
@@ -253,6 +258,7 @@ ipcMain.handle("export-image", async (_event, payload) => {
   const result = await dialog.showSaveDialog(mainWindow, {
     defaultPath: payload.defaultName || "mosaic-export.png",
     filters: [
+      { name: "GIF Image", extensions: ["gif"] },
       { name: "PNG Image", extensions: ["png"] },
       { name: "JPG Image", extensions: ["jpg", "jpeg"] },
     ],
@@ -264,7 +270,7 @@ ipcMain.handle("export-image", async (_event, payload) => {
 
   const targetPath = result.filePath;
   const ext = path.extname(targetPath).toLowerCase();
-  const dataUrl = ext === ".jpg" || ext === ".jpeg" ? payload.jpegDataUrl : payload.pngDataUrl;
+  const dataUrl = ext === ".gif" ? payload.gifDataUrl : ext === ".jpg" || ext === ".jpeg" ? payload.jpegDataUrl : payload.pngDataUrl;
   await fs.writeFile(targetPath, dataUrlToBuffer(dataUrl));
 
   return { canceled: false, path: targetPath };
@@ -330,6 +336,10 @@ function mimeForExtension(extension) {
 
   if (extension === ".webp") {
     return "image/webp";
+  }
+
+  if (extension === ".gif") {
+    return "image/gif";
   }
 
   return "image/png";

@@ -8,6 +8,12 @@ import { getWheelZoomFactor } from "../shared/zoom.js";
 
 const api = window.mosaicAPI ?? {
   openDialog: async () => ({ canceled: true }),
+  decodeGif: async () => {
+    throw new Error("Animated GIFs are available in the Electron app.");
+  },
+  encodeGif: async () => {
+    throw new Error("Animated GIF export is available in the Electron app.");
+  },
   readClipboardImage: async () => {
     throw new Error("Clipboard images are available in the Electron app.");
   },
@@ -47,12 +53,15 @@ const state = {
   blockSizeEditOriginalMasks: null,
   spacePressed: false,
   exportQuality: 0.92,
+  animation: null,
 };
 
 const mosaicCache = new Map();
 const adaptiveOutlineCache = new Map();
 let imageSampleCanvas = null;
 let imageSampleContext = null;
+let imageSampleCacheKey = null;
+let gifPreviewTimer = null;
 
 setTool("rectangle");
 resizeCanvas();
@@ -235,9 +244,17 @@ async function newFromClipboard() {
 
 async function loadProjectContent(content) {
   const project = parseProject(content);
+  stopGifPreview();
+
+  if (isGifDataUrl(project.source.dataUrl)) {
+    await loadGifProject(project);
+    return;
+  }
+
   const image = await loadImage(project.source.dataUrl);
   state.project = project;
   state.image = image;
+  state.animation = null;
   state.masks = cloneMasks(project.masks);
   state.blockSize = clampBlockSize(project.settings.blockSize);
   state.exportQuality = project.settings.exportQuality || 0.92;
@@ -253,6 +270,13 @@ async function loadProjectContent(content) {
 }
 
 async function loadImageDocument(source) {
+  stopGifPreview();
+
+  if (isGifDataUrl(source.dataUrl)) {
+    await loadGifDocument(source);
+    return;
+  }
+
   const image = await loadImage(source.dataUrl);
   state.project = createProject({
     dataUrl: source.dataUrl,
@@ -261,6 +285,7 @@ async function loadImageDocument(source) {
     name: source.name || "Untitled",
   });
   state.image = image;
+  state.animation = null;
   state.masks = [];
   state.history = [];
   state.future = [];
@@ -273,6 +298,53 @@ async function loadImageDocument(source) {
   draw();
 }
 
+async function loadGifProject(project) {
+  const gif = await api.decodeGif(project.source.dataUrl);
+  const animation = createAnimation(gif);
+
+  state.project = project;
+  state.image = animation.frames[0].canvas;
+  state.animation = animation;
+  state.masks = cloneMasks(project.masks);
+  state.blockSize = clampBlockSize(project.settings.blockSize);
+  state.exportQuality = project.settings.exportQuality || 0.92;
+  state.history = [];
+  state.future = [];
+  state.selectedIds.clear();
+  state.hoveredId = null;
+  clearImageCaches();
+  syncBlockSizeControl();
+  resetView();
+  syncDocumentText();
+  draw();
+  startGifPreview();
+}
+
+async function loadGifDocument(source) {
+  const gif = await api.decodeGif(source.dataUrl);
+  const animation = createAnimation(gif);
+
+  state.project = createProject({
+    dataUrl: source.dataUrl,
+    width: gif.width,
+    height: gif.height,
+    name: source.name || "Untitled.gif",
+  });
+  state.image = animation.frames[0].canvas;
+  state.animation = animation;
+  state.masks = [];
+  state.history = [];
+  state.future = [];
+  state.selectedIds.clear();
+  state.hoveredId = null;
+  clearImageCaches();
+  syncBlockSizeControl();
+  resetView();
+  syncDocumentText();
+  draw();
+  startGifPreview();
+}
+
 function loadImage(dataUrl) {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -280,6 +352,71 @@ function loadImage(dataUrl) {
     image.onerror = () => reject(new Error("Could not load image."));
     image.src = dataUrl;
   });
+}
+
+function isGifDataUrl(dataUrl) {
+  return typeof dataUrl === "string" && /^data:image\/gif[,;]/i.test(dataUrl);
+}
+
+function createAnimation(gif) {
+  if (!gif.frames?.length) {
+    throw new Error("Could not load GIF.");
+  }
+
+  return {
+    width: gif.width,
+    height: gif.height,
+    frameIndex: 0,
+    frames: gif.frames.map((frame) => ({
+      canvas: createFrameCanvas(frame.data, gif.width, gif.height),
+      delay: frame.delay,
+    })),
+  };
+}
+
+function createFrameCanvas(data, width, height) {
+  const frameCanvas = document.createElement("canvas");
+  frameCanvas.width = width;
+  frameCanvas.height = height;
+  const frameContext = frameCanvas.getContext("2d");
+  frameContext.putImageData(new ImageData(new Uint8ClampedArray(data), width, height), 0, 0);
+  return frameCanvas;
+}
+
+function startGifPreview() {
+  stopGifPreview();
+
+  if (!state.animation || state.animation.frames.length < 2) {
+    return;
+  }
+
+  const tick = () => {
+    if (!state.animation) {
+      return;
+    }
+
+    const currentFrame = state.animation.frames[state.animation.frameIndex];
+    gifPreviewTimer = window.setTimeout(() => {
+      if (!state.animation) {
+        return;
+      }
+
+      state.animation.frameIndex = (state.animation.frameIndex + 1) % state.animation.frames.length;
+      state.image = getCurrentFrameImage();
+      clearFrameCaches();
+      draw();
+      tick();
+    }, currentFrame.delay);
+  };
+
+  tick();
+}
+
+function stopGifPreview() {
+  if (gifPreviewTimer) {
+    window.clearTimeout(gifPreviewTimer);
+    gifPreviewTimer = null;
+  }
 }
 
 async function saveProject(saveAs) {
@@ -298,6 +435,7 @@ async function exportImage() {
   const result = await api.exportImage({
     pngDataUrl: renderExportDataUrl("image/png"),
     jpegDataUrl: renderExportDataUrl("image/jpeg"),
+    gifDataUrl: await renderExportGifDataUrl(),
     defaultName: defaultExportName(),
   });
 
@@ -357,22 +495,42 @@ function syncBlockSizeControl() {
 
 function renderExportDataUrl(type) {
   const output = document.createElement("canvas");
-  output.width = state.image.naturalWidth;
-  output.height = state.image.naturalHeight;
+  output.width = getDocumentWidth();
+  output.height = getDocumentHeight();
   const outputCtx = output.getContext("2d");
   drawFlattened(outputCtx);
   return output.toDataURL(type, state.exportQuality);
 }
 
-function drawFlattened(targetCtx) {
-  targetCtx.clearRect(0, 0, state.image.naturalWidth, state.image.naturalHeight);
-  targetCtx.drawImage(state.image, 0, 0);
+async function renderExportGifDataUrl() {
+  const width = getDocumentWidth();
+  const height = getDocumentHeight();
+  const output = document.createElement("canvas");
+  output.width = width;
+  output.height = height;
+  const outputCtx = output.getContext("2d");
+  const sourceFrames = state.animation?.frames || [{ canvas: state.image, delay: 100 }];
+  const frames = sourceFrames.map((frame, index) => {
+    drawFlattened(outputCtx, frame.canvas, `export-${index}`);
+    const imageData = outputCtx.getImageData(0, 0, width, height);
+    return {
+      data: imageData.data.buffer,
+      delay: frame.delay,
+    };
+  });
+
+  return api.encodeGif({ width, height, frames });
+}
+
+function drawFlattened(targetCtx, sourceImage = getCurrentFrameImage(), cacheKey = getCurrentFrameCacheKey()) {
+  targetCtx.clearRect(0, 0, getDocumentWidth(), getDocumentHeight());
+  targetCtx.drawImage(sourceImage, 0, 0);
 
   for (const mask of state.masks) {
     targetCtx.save();
     pathMask(targetCtx, mask);
     targetCtx.clip();
-    targetCtx.drawImage(getMosaicCanvas(mask.blockSize), 0, 0);
+    targetCtx.drawImage(getMosaicCanvas(mask.blockSize, sourceImage, cacheKey), 0, 0);
     targetCtx.restore();
   }
 }
@@ -390,13 +548,14 @@ function draw() {
   }
 
   const view = getView();
+  const sourceImage = getCurrentFrameImage();
   ctx.save();
   ctx.fillStyle = "#0f1117";
   ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
   ctx.shadowBlur = 24;
   ctx.fillRect(view.x - 1, view.y - 1, view.width + 2, view.height + 2);
   ctx.shadowBlur = 0;
-  ctx.drawImage(state.image, view.x, view.y, view.width, view.height);
+  ctx.drawImage(sourceImage, view.x, view.y, view.width, view.height);
   ctx.restore();
 
   for (const mask of state.masks) {
@@ -524,7 +683,7 @@ function getAdaptiveMaskOutline(mask, lineWidth) {
     return null;
   }
 
-  const cacheKey = `${mask.id}:${state.zoom.toFixed(3)}:${lineWidth}:${JSON.stringify(mask)}:${bounds.x},${bounds.y},${bounds.width},${bounds.height}`;
+  const cacheKey = `${getCurrentFrameCacheKey()}:${mask.id}:${state.zoom.toFixed(3)}:${lineWidth}:${JSON.stringify(mask)}:${bounds.x},${bounds.y},${bounds.width},${bounds.height}`;
 
   if (adaptiveOutlineCache.has(cacheKey)) {
     return adaptiveOutlineCache.get(cacheKey);
@@ -574,12 +733,15 @@ function getAdaptiveMaskOutline(mask, lineWidth) {
 }
 
 function getImageSampleContext() {
-  if (!imageSampleCanvas) {
+  const frameKey = getCurrentFrameCacheKey();
+
+  if (!imageSampleCanvas || imageSampleCacheKey !== frameKey) {
     imageSampleCanvas = document.createElement("canvas");
-    imageSampleCanvas.width = state.image.naturalWidth;
-    imageSampleCanvas.height = state.image.naturalHeight;
+    imageSampleCanvas.width = getDocumentWidth();
+    imageSampleCanvas.height = getDocumentHeight();
     imageSampleContext = imageSampleCanvas.getContext("2d");
-    imageSampleContext.drawImage(state.image, 0, 0);
+    imageSampleContext.drawImage(getCurrentFrameImage(), 0, 0);
+    imageSampleCacheKey = frameKey;
   }
 
   return imageSampleContext;
@@ -590,15 +752,24 @@ function clearImageCaches() {
   adaptiveOutlineCache.clear();
   imageSampleCanvas = null;
   imageSampleContext = null;
+  imageSampleCacheKey = null;
+}
+
+function clearFrameCaches() {
+  mosaicCache.clear();
+  adaptiveOutlineCache.clear();
+  imageSampleCanvas = null;
+  imageSampleContext = null;
+  imageSampleCacheKey = null;
 }
 
 function getOutlineBounds(mask, imageLineWidth) {
   const bounds = getMaskBounds(mask);
   const pad = Math.ceil(imageLineWidth + 2);
-  const x = clampNumber(Math.floor(bounds.x - pad), 0, state.image.naturalWidth);
-  const y = clampNumber(Math.floor(bounds.y - pad), 0, state.image.naturalHeight);
-  const right = clampNumber(Math.ceil(bounds.x + bounds.width + pad), 0, state.image.naturalWidth);
-  const bottom = clampNumber(Math.ceil(bounds.y + bounds.height + pad), 0, state.image.naturalHeight);
+  const x = clampNumber(Math.floor(bounds.x - pad), 0, getDocumentWidth());
+  const y = clampNumber(Math.floor(bounds.y - pad), 0, getDocumentHeight());
+  const right = clampNumber(Math.ceil(bounds.x + bounds.width + pad), 0, getDocumentWidth());
+  const bottom = clampNumber(Math.ceil(bounds.y + bounds.height + pad), 0, getDocumentHeight());
 
   return {
     x,
@@ -612,24 +783,24 @@ function clampNumber(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function getMosaicCanvas(blockSize) {
+function getMosaicCanvas(blockSize, sourceImage = getCurrentFrameImage(), cacheKey = getCurrentFrameCacheKey()) {
   const size = clampBlockSize(blockSize);
-  const key = `${state.project.source.dataUrl.length}:${size}`;
+  const key = `${cacheKey}:${size}`;
 
   if (mosaicCache.has(key)) {
     return mosaicCache.get(key);
   }
 
   const small = document.createElement("canvas");
-  small.width = Math.max(1, Math.ceil(state.image.naturalWidth / size));
-  small.height = Math.max(1, Math.ceil(state.image.naturalHeight / size));
+  small.width = Math.max(1, Math.ceil(getDocumentWidth() / size));
+  small.height = Math.max(1, Math.ceil(getDocumentHeight() / size));
   const smallCtx = small.getContext("2d");
   smallCtx.imageSmoothingEnabled = true;
-  smallCtx.drawImage(state.image, 0, 0, small.width, small.height);
+  smallCtx.drawImage(sourceImage, 0, 0, small.width, small.height);
 
   const full = document.createElement("canvas");
-  full.width = state.image.naturalWidth;
-  full.height = state.image.naturalHeight;
+  full.width = getDocumentWidth();
+  full.height = getDocumentHeight();
   const fullCtx = full.getContext("2d");
   fullCtx.imageSmoothingEnabled = false;
   fullCtx.drawImage(small, 0, 0, full.width, full.height);
@@ -979,7 +1150,7 @@ async function onDrop(event) {
     return;
   }
 
-  if (!file.type.startsWith("image/")) {
+  if (!file.type.startsWith("image/") && !file.name.toLowerCase().endsWith(".gif")) {
     showStatus("Drop an image or .msc project");
     return;
   }
@@ -1256,8 +1427,8 @@ function fitToScreen() {
   }
 
   const { width, height } = getCanvasSize();
-  const scaleX = (width - 80) / state.image.naturalWidth;
-  const scaleY = (height - 80) / state.image.naturalHeight;
+  const scaleX = (width - 80) / getDocumentWidth();
+  const scaleY = (height - 80) / getDocumentHeight();
   state.zoom = Math.max(0.05, Math.min(1, scaleX, scaleY));
   state.pan = { x: 0, y: 0 };
   draw();
@@ -1274,8 +1445,8 @@ function resetView() {
 
 function getView() {
   const { width, height } = getCanvasSize();
-  const imageWidth = state.image.naturalWidth * state.zoom;
-  const imageHeight = state.image.naturalHeight * state.zoom;
+  const imageWidth = getDocumentWidth() * state.zoom;
+  const imageHeight = getDocumentHeight() * state.zoom;
 
   return {
     x: (width - imageWidth) / 2 + state.pan.x,
@@ -1296,7 +1467,23 @@ function screenToImage(event) {
 }
 
 function pointInImage(point) {
-  return point.x >= 0 && point.y >= 0 && point.x <= state.image.naturalWidth && point.y <= state.image.naturalHeight;
+  return point.x >= 0 && point.y >= 0 && point.x <= getDocumentWidth() && point.y <= getDocumentHeight();
+}
+
+function getCurrentFrameImage() {
+  return state.animation?.frames[state.animation.frameIndex]?.canvas || state.image;
+}
+
+function getCurrentFrameCacheKey() {
+  return state.animation ? `${state.project?.source?.dataUrl?.length || 0}:${state.animation.frameIndex}` : `${state.project?.source?.dataUrl?.length || 0}:static`;
+}
+
+function getDocumentWidth() {
+  return state.animation?.width || state.image?.naturalWidth || state.image?.width || 0;
+}
+
+function getDocumentHeight() {
+  return state.animation?.height || state.image?.naturalHeight || state.image?.height || 0;
 }
 
 function resizeCanvas() {
@@ -1344,7 +1531,7 @@ function ensureDocument() {
 function defaultExportName() {
   const name = state.project?.source?.name || "mosaic-export";
   const base = name.replace(/\.[^.]+$/, "");
-  return `${base}-mosaic.png`;
+  return `${base}-mosaic.${state.animation ? "gif" : "png"}`;
 }
 
 function readFileAsDataUrl(file) {
